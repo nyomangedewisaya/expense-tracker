@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String    @unique
+  password   String
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime? 
+
+  wallets      Wallet[]
+  categories   Category[]
+  budgets      Budget[]
+  transactions Transaction[]
+  transfers    Transfer[]
+
+  @@map("users")
+}
+
+model Wallet {
+  id              Int       @id @default(autoincrement())
+  user_id         Int
+  name            String
+  type            String
+  initial_balance Int    
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  user User @relation(fields: [user_id], references: [id])
+  
+  transactions       Transaction[]
+  outgoing_transfers Transfer[]    @relation("FromWallet")
+  incoming_transfers Transfer[]    @relation("ToWallet")
+
+  @@map("wallets")
+}
+
+model Category {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  name       String
+  type       String
+  color      String?
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  deleted_at DateTime?
+
+  user User @relation(fields: [user_id], references: [id])
+  
+  budgets      Budget[]
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+model Budget {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  category_id Int
+  amount      Int    
+  start_date  DateTime  @db.Date
+  end_date    DateTime  @db.Date
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+
+  user     User     @relation(fields: [user_id], references: [id])
+  category Category @relation(fields: [category_id], references: [id])
+
+  @@map("budgets")
+}
+
+model Transaction {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  wallet_id        Int
+  category_id      Int
+  amount           Int    
+  description      String?   @db.Text
+  transaction_date DateTime  @db.Date
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+
+  user     User     @relation(fields: [user_id], references: [id])
+  wallet   Wallet   @relation(fields: [wallet_id], references: [id])
+  category Category @relation(fields: [category_id], references: [id])
+
+  @@map("transactions")
+}
+
+model Transfer {
+  id               Int       @id @default(autoincrement())
+  user_id          Int
+  from_wallet_id   Int
+  to_wallet_id     Int
+  amount           Int    
+  description      String?   @db.Text
+  transaction_date DateTime  @db.Date
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+
+  user        User   @relation(fields: [user_id], references: [id])
+  from_wallet Wallet @relation("FromWallet", fields: [from_wallet_id], references: [id])
+  to_wallet   Wallet @relation("ToWallet", fields: [to_wallet_id], references: [id])
+
+  @@map("transfers")
+}
