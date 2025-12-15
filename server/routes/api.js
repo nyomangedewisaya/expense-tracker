@@ -11,50 +11,38 @@ const dashboardController = require('../controllers/dashboardController');
 const transferController = require('../controllers/transferController'); 
 const budgetController = require('../controllers/budgetController');
 
-// ==============================
-// 1. AUTHENTICATION (Public)
-// ==============================
+// 1. AUTH
 router.post('/auth/register', authController.register);
 router.post('/auth/login', authController.login);
 
-// ==============================
-// 2. WALLET / DOMPET
-// ==============================
-// Semua rute di bawah ini WAJIB login (authMiddleware)
+// 2. WALLET
 router.get('/wallets', authMiddleware, walletController.getWallets);
 router.post('/wallets', authMiddleware, walletController.createWallet);
 
-// ==============================
-// 3. CATEGORY / KATEGORI
-// ==============================
+// 3. CATEGORY
 router.get('/categories', authMiddleware, categoryController.getCategories);
 router.post('/categories', authMiddleware, categoryController.createCategory);
 router.delete('/categories/:id', authMiddleware, categoryController.deleteCategory);
 
-// ==============================
-// 4. TRANSACTIONS / TRANSAKSI
-// ==============================
+// 4. TRANSACTION
 router.get('/transactions', authMiddleware, transactionController.getTransactions);
 router.post('/transactions', authMiddleware, transactionController.createTransaction);
 router.delete('/transactions/:id', authMiddleware, transactionController.deleteTransaction);
 
-// ==============================
 // 5. DASHBOARD
-// ==============================
 router.get('/dashboard', authMiddleware, dashboardController.getDashboardSummary);
+router.get('/dashboard/chart', authMiddleware, dashboardController.getDashboardChart);
+// PERBAIKAN: Tambahkan 's' agar sesuai frontend
+router.get('/dashboard/expenses', authMiddleware, dashboardController.getExpenseBreakdown); 
 
-// ==============================
-// 6. TRANSFERS (PINDAH DANA)
-// ==============================
+// 6. TRANSFER
 router.get('/transfers', authMiddleware, transferController.getTransfers);
 router.post('/transfers', authMiddleware, transferController.createTransfer);
 router.delete('/transfers/:id', authMiddleware, transferController.deleteTransfer);
 
-// ==============================
-// 7. BUDGETS (ANGGARAN)
-// ==============================
+// 7. BUDGET
 router.get('/budgets', authMiddleware, budgetController.getBudgets);
 router.post('/budgets', authMiddleware, budgetController.createBudget);
-router.delete('/budgets/:id', authMiddleware, budgetController.deleteBudget)
+router.delete('/budgets/:id', authMiddleware, budgetController.deleteBudget);
 
 module.exports = router;
