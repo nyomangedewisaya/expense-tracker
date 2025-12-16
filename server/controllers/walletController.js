@@ -1,68 +1,58 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// GET WALLETS (Dengan Saldo Terkini/Real-time)
 const getWallets = async (req, res) => {
   try {
     const userId = req.user.id;
     
+    // PERUBAHAN: Hapus "deleted_at: null" agar semua wallet (aktif/nonaktif) terambil
     const wallets = await prisma.wallet.findMany({
-      where: { user_id: userId, deleted_at: null },
-      orderBy: { id: 'asc' } // Urutkan biar rapi
+      where: { user_id: userId }, 
+      orderBy: { id: 'asc' }
     });
 
-    // Kita harus hitung saldo satu per satu secara Async
     const walletsWithBalance = await Promise.all(wallets.map(async (wallet) => {
-        // 1. Hitung Total Pemasukan (Income) di dompet ini
-        const incomeAgg = await prisma.transaction.aggregate({
-            _sum: { amount: true },
-            where: { 
-                wallet_id: wallet.id, 
-                deleted_at: null, 
-                category: { type: 'income' } 
-            }
-        });
+        // Logic hitung saldo (SAMA SEPERTI SEBELUMNYA, Copy Paste saja bagian hitungnya)
+        const incomeAgg = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { wallet_id: wallet.id, deleted_at: null, category: { type: 'income' } } });
+        const expenseAgg = await prisma.transaction.aggregate({ _sum: { amount: true }, where: { wallet_id: wallet.id, deleted_at: null, category: { type: 'expense' } } });
+        const transferInAgg = await prisma.transfer.aggregate({ _sum: { amount: true }, where: { to_wallet_id: wallet.id, deleted_at: null } });
+        const transferOutAgg = await prisma.transfer.aggregate({ _sum: { amount: true }, where: { from_wallet_id: wallet.id, deleted_at: null } });
 
-        // 2. Hitung Total Pengeluaran (Expense) di dompet ini
-        const expenseAgg = await prisma.transaction.aggregate({
-            _sum: { amount: true },
-            where: { 
-                wallet_id: wallet.id, 
-                deleted_at: null, 
-                category: { type: 'expense' } 
-            }
-        });
-
-        // 3. Hitung Transfer MASUK ke dompet ini
-        const transferInAgg = await prisma.transfer.aggregate({
-            _sum: { amount: true },
-            where: { to_wallet_id: wallet.id, deleted_at: null }
-        });
-
-        // 4. Hitung Transfer KELUAR dari dompet ini
-        const transferOutAgg = await prisma.transfer.aggregate({
-            _sum: { amount: true },
-            where: { from_wallet_id: wallet.id, deleted_at: null }
-        });
-
-        // 5. Rumus Saldo Akhir
-        const currentBalance = wallet.initial_balance 
+        const currentBalance = Number(wallet.initial_balance) 
             + (incomeAgg._sum.amount || 0) 
             - (expenseAgg._sum.amount || 0)
             + (transferInAgg._sum.amount || 0)
             - (transferOutAgg._sum.amount || 0);
 
-        // Kembalikan objek wallet ditambah field current_balance
-        return {
-            ...wallet,
-            current_balance: currentBalance 
-        };
+        return { ...wallet, current_balance: currentBalance };
     }));
 
     res.json(walletsWithBalance);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+// [BARU] Fungsi Aktif/Nonaktifkan Wallet
+const toggleWalletStatus = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Cek dulu status sekarang
+        const wallet = await prisma.wallet.findUnique({ where: { id: parseInt(id) } });
+        if (!wallet) return res.status(404).json({ message: "Wallet tidak ditemukan" });
+
+        // Jika null maka isi tanggal (Nonaktif), jika ada tanggal maka null-kan (Aktif)
+        const newStatus = wallet.deleted_at ? null : new Date();
+
+        await prisma.wallet.update({
+            where: { id: parseInt(id) },
+            data: { deleted_at: newStatus }
+        });
+
+        res.json({ message: `Dompet berhasil ${newStatus ? 'dinonaktifkan' : 'diaktifkan'}` });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
 // CREATE WALLET (Masih sama, logicnya oke)
@@ -88,4 +78,4 @@ const createWallet = async (req, res) => {
   }
 };
 
-module.exports = { getWallets, createWallet };
+module.exports = { getWallets, toggleWalletStatus, createWallet };

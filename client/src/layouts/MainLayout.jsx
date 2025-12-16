@@ -1,10 +1,13 @@
 import Sidebar from '../components/Sidebar';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import { FiBell, FiSearch } from 'react-icons/fi';
+import { FiSearch, FiMenu } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
 const MainLayout = ({ children }) => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Fungsi Sapaan Waktu Indonesia
   const getGreeting = () => {
@@ -13,6 +16,39 @@ const MainLayout = ({ children }) => {
     if (hour < 15) return 'Selamat Siang';
     if (hour < 18) return 'Selamat Sore';
     return 'Selamat Malam';
+  };
+
+  // Fungsi Search Sederhana (Mengarah ke halaman transaksi)
+  // FUNGSI SEARCH YANG LEBIH PINTAR (SMART NAVIGATION)
+  const handleSearch = (e) => {
+    if (e.key === 'Enter' && searchTerm.trim() !== "") {
+      const keyword = searchTerm.toLowerCase(); // Ubah ke huruf kecil biar gampang dicek
+
+      // 1. LOGIKA PINTASAN MENU (SHORTCUT)
+      if (keyword.includes('dompet') || keyword.includes('wallet') || keyword.includes('saldo')) {
+          navigate('/wallets');
+      } 
+      else if (keyword.includes('kategori') || keyword.includes('category') || keyword.includes('label')) {
+          navigate('/categories');
+      }
+      else if (keyword.includes('anggaran') || keyword.includes('budget') || keyword.includes('limit')) {
+          navigate('/budgets');
+      }
+      else if (keyword.includes('transfer') || keyword.includes('kirim') || keyword.includes('pindah')) {
+          navigate('/transfers');
+      }
+      else if (keyword.includes('setting') || keyword.includes('pengaturan') || keyword.includes('profil') || keyword.includes('password')) {
+          navigate('/settings');
+      }
+      
+      // 2. DEFAULT: JIKA BUKAN MENU, CARI DATA DI TRANSAKSI
+      else {
+          navigate(`/transactions?q=${encodeURIComponent(searchTerm)}`);
+      }
+      
+      // Reset input setelah enter
+      setSearchTerm(''); 
+    }
   };
 
   return (
@@ -24,43 +60,45 @@ const MainLayout = ({ children }) => {
       <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
         
         {/* --- HEADER --- */}
-        <header className="h-20 bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-100 px-8 flex items-center justify-between">
+        <header className="h-20 bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-100 px-6 md:px-8 flex items-center justify-between">
           
           {/* Kiri: Sapaan */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-800">
-              {getGreeting()}, <span className="text-blue-600">{user?.name?.split(' ')[0]}</span> 👋
-            </h2>
-            <p className="text-xs text-gray-400 mt-0.5">Berikut ringkasan keuanganmu hari ini.</p>
+          <div className="flex items-center gap-4">
+            {/* Tombol Menu Mobile (Hanya muncul di layar kecil) */}
+            <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+                <FiMenu size={24} />
+            </button>
+            
+            <div>
+                <h2 className="text-xl font-bold text-gray-800">
+                {getGreeting()} 👋
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">Semoga harimu menyenangkan!</p>
+            </div>
           </div>
 
-          {/* Kanan: Aksi */}
-          <div className="flex items-center gap-4">
-            {/* Search Bar Kecil */}
-            <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2">
-                <FiSearch className="text-gray-400" />
-                <input type="text" placeholder="Cari data..." className="bg-transparent border-none focus:outline-none text-sm ml-2 w-32 placeholder-gray-400" />
-            </div>
-
-            {/* Notifikasi */}
-            <button className="relative p-2.5 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm">
-               <FiBell className="text-lg" />
-               <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
-
-            {/* Avatar Profil */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-400 p-0.5 cursor-pointer hover:shadow-lg hover:shadow-blue-200 transition-all">
-                <div className="w-full h-full bg-white rounded-full flex items-center justify-center text-blue-600 font-bold text-sm">
-                    {user?.name?.charAt(0).toUpperCase()}
+          {/* Kanan: Search Bar */}
+          <div className="flex items-center">
+            <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FiSearch className="text-gray-400 group-focus-within:text-blue-500 transition-colors" />
                 </div>
+                <input 
+                    type="text" 
+                    placeholder="Cari menu atau data..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyDown={handleSearch}
+                    className="bg-gray-100 text-gray-600 border border-transparent focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-500/10 rounded-xl py-2.5 pl-10 pr-4 text-sm w-40 md:w-64 transition-all outline-none" 
+                />
             </div>
           </div>
         </header>
 
         {/* --- KONTEN HALAMAN --- */}
-        <main className="flex-1 p-8 overflow-y-auto">
-          {/* Animasi Masuk */}
-          <div className="animate-fade-in-up">
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto overflow-x-hidden">
+          {/* Container Konten dengan Fade In Animation */}
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
             {children}
           </div>
         </main>

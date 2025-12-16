@@ -44,7 +44,10 @@ const getTransactions = async (req, res) => {
         category: true,
         wallet: true   
       },
-      orderBy: { transaction_date: 'desc' }
+      orderBy: [
+        { transaction_date: 'desc' }, 
+        { created_at: 'desc' }        
+      ]
     });
 
     res.json(transactions);

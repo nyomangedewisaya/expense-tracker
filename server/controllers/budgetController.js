@@ -1,20 +1,20 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// GET: Ambil Budget + Progress (Terpakai berapa?)
+// GET BUDGETS (Dengan Progress Bar)
 const getBudgets = async (req, res) => {
-  const userId = req.user.id;
-  
   try {
+    const userId = req.user.id;
+    
+    // 1. Ambil semua budget aktif
     const budgets = await prisma.budget.findMany({
       where: { user_id: userId, deleted_at: null },
-      include: { category: true }
+      include: { category: true }, // Include data kategori (nama & warna)
+      orderBy: { end_date: 'asc' }
     });
 
-    // Logic Spesial: Hitung progress pemakaian budget
-    // Kita pakai Promise.all agar mapping async berjalan paralel
+    // 2. Hitung 'spent' (terpakai) untuk setiap budget
     const budgetsWithProgress = await Promise.all(budgets.map(async (budget) => {
-        // Hitung total pengeluaran untuk kategori ini dalam rentang tanggal budget
         const expenseAgg = await prisma.transaction.aggregate({
             _sum: { amount: true },
             where: {
@@ -22,19 +22,21 @@ const getBudgets = async (req, res) => {
                 category_id: budget.category_id,
                 deleted_at: null,
                 transaction_date: {
-                    gte: budget.start_date,
-                    lte: budget.end_date
+                    gte: budget.start_date, // Dari tanggal mulai
+                    lte: budget.end_date    // Sampai tanggal selesai
                 }
             }
         });
 
         const spent = expenseAgg._sum.amount || 0;
+        const percentage = Math.round((spent / Number(budget.amount)) * 100);
         
         return {
             ...budget,
-            spent: spent, // Data tambahan untuk Frontend (Progress Bar)
-            remaining: budget.amount - spent,
-            percentage: Math.min(100, Math.round((spent / budget.amount) * 100)) // Persentase 0-100%
+            amount: Number(budget.amount), // Pastikan number
+            spent: spent,
+            remaining: Number(budget.amount) - spent,
+            percentage: percentage
         };
     }));
 
@@ -44,33 +46,52 @@ const getBudgets = async (req, res) => {
   }
 };
 
-// POST: Pasang Budget Baru
+// CREATE
 const createBudget = async (req, res) => {
-  const userId = req.user.id;
   const { category_id, amount, start_date, end_date } = req.body;
-
   try {
-    const category = await prisma.category.findUnique({ where: { id: parseInt(category_id) } });
-    if (!category || category.type !== 'expense') {
-        return res.status(400).json({ message: "Budget hanya bisa untuk kategori Pengeluaran (Expense)" });
+    if (!category_id || !amount || !start_date || !end_date) {
+        return res.status(400).json({ message: "Data tidak lengkap" });
     }
+
+    // Cek apakah budget untuk kategori ini di tanggal yang sama sudah ada (Opsional, tapi bagus untuk validasi)
+    // Disini kita skip dulu agar simple, user boleh buat multiple budget
 
     const newBudget = await prisma.budget.create({
       data: {
-        user_id: userId,
+        user_id: req.user.id,
         category_id: parseInt(category_id),
         amount: parseInt(amount),
         start_date: new Date(start_date),
         end_date: new Date(end_date)
       }
     });
-
     res.status(201).json(newBudget);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// UPDATE
+const updateBudget = async (req, res) => {
+    const { id } = req.params;
+    const { amount, start_date, end_date } = req.body;
+    try {
+        await prisma.budget.update({
+            where: { id: parseInt(id) },
+            data: {
+                amount: parseInt(amount),
+                start_date: new Date(start_date),
+                end_date: new Date(end_date)
+            }
+        });
+        res.json({ message: "Anggaran diperbarui" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// DELETE (Soft Delete)
 const deleteBudget = async (req, res) => {
     const { id } = req.params;
     try {
@@ -78,10 +99,10 @@ const deleteBudget = async (req, res) => {
             where: { id: parseInt(id) },
             data: { deleted_at: new Date() }
         });
-        res.json({ message: "Budget dihapus" });
+        res.json({ message: "Anggaran dihapus" });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-}
+};
 
-module.exports = { getBudgets, createBudget, deleteBudget };
+module.exports = { getBudgets, createBudget, updateBudget, deleteBudget };

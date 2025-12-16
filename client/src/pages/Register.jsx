@@ -4,6 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import Card from '../components/Card';
 import Input from '../components/Input';
 import Button from '../components/Button';
+import AlertModal from '../components/AlertModal'; // 1. Import AlertModal
 import { FiTrendingUp } from 'react-icons/fi';
 
 const Register = () => {
@@ -12,6 +13,9 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // 2. State untuk kontrol Modal Sukses
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -22,13 +26,22 @@ const Register = () => {
     setLoading(true);
     try {
       await register(name, email, password);
-      alert('Registrasi berhasil! Silakan login.');
-      navigate('/login');
+      
+      // 3. JANGAN alert() dan JANGAN langsung navigate()
+      // Tampilkan modal sukses dulu
+      setIsSuccessOpen(true);
+      
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal mendaftar.');
     } finally {
       setLoading(false);
     }
+  };
+
+  // 4. Fungsi handle ketika user klik tombol "Mengerti" di modal / tutup modal
+  const handleCloseSuccess = () => {
+    setIsSuccessOpen(false);
+    navigate('/login'); // Baru pindah ke login disini
   };
 
   return (
@@ -58,7 +71,7 @@ const Register = () => {
             <form onSubmit={handleSubmit}>
               <Input 
                 label="Full Name"
-                placeholder="John Doe" // Placeholder normal
+                placeholder="John Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -94,6 +107,16 @@ const Register = () => {
             </div>
         </div>
       </Card>
+
+      {/* 5. Render Modal Alert */}
+      <AlertModal 
+        isOpen={isSuccessOpen}
+        onClose={handleCloseSuccess} // Panggil fungsi redirect saat ditutup
+        title="Registrasi Berhasil!"
+        message="Akun Anda telah berhasil dibuat. Silakan login untuk mulai mengelola keuangan Anda."
+        type="success" // Agar warnanya hijau (checklist)
+      />
+
     </div>
   );
 };
