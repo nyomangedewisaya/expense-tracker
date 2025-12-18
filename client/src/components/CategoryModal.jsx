@@ -8,20 +8,17 @@ export default function CategoryModal({ isOpen, onClose, onSuccess, editData }) 
   const [animate, setAnimate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // State Form
   const [formData, setFormData] = useState({
     name: '',
-    type: 'expense', // default
+    type: 'expense',
     color: '#000000'
   });
 
-  // Animasi & Load Data Edit
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
       setTimeout(() => setAnimate(true), 10);
       
-      // Jika Mode Edit, isi form
       if (editData) {
         setFormData({
           name: editData.name,
@@ -29,7 +26,6 @@ export default function CategoryModal({ isOpen, onClose, onSuccess, editData }) 
           color: editData.color || '#000000'
         });
       } else {
-        // Reset jika mode create
         setFormData({ name: '', type: 'expense', color: '#EF4444' });
       }
 
@@ -44,14 +40,11 @@ export default function CategoryModal({ isOpen, onClose, onSuccess, editData }) 
     setSubmitting(true);
     try {
       if (editData) {
-        // Mode UPDATE
         await api.put(`/categories/${editData.id}`, {
             name: formData.name,
             color: formData.color
-            // Type tidak dikirim
         });
       } else {
-        // Mode CREATE
         await api.post('/categories', formData);
       }
       onSuccess();
@@ -73,8 +66,6 @@ export default function CategoryModal({ isOpen, onClose, onSuccess, editData }) 
       ></div>
 
       <div className={`bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden relative z-10 transform transition-all duration-300 ease-out ${animate ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-8'}`}>
-        
-        {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <h3 className="font-bold text-lg text-gray-800">{editData ? 'Edit Kategori' : 'Kategori Baru'}</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
@@ -83,14 +74,12 @@ export default function CategoryModal({ isOpen, onClose, onSuccess, editData }) 
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          
-          {/* Tipe (Disabled saat Edit) */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Tipe Transaksi</label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                disabled={!!editData} // Disabled kalau edit
+                disabled={!!editData} 
                 onClick={() => setFormData({...formData, type: 'income'})}
                 className={`py-2.5 rounded-xl text-sm font-semibold transition-all border 
                   ${formData.type === 'income' 
@@ -118,7 +107,6 @@ export default function CategoryModal({ isOpen, onClose, onSuccess, editData }) 
             {editData && <p className="text-[10px] text-gray-400 mt-1 italic">*Tipe kategori tidak dapat diubah.</p>}
           </div>
 
-          {/* Nama */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Kategori</label>
             <input 
@@ -131,14 +119,11 @@ export default function CategoryModal({ isOpen, onClose, onSuccess, editData }) 
             />
           </div>
 
-          {/* Color Picker */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Warna Label</label>
             <div className="flex items-center gap-4">
-               {/* Preview Lingkaran */}
                <div className="w-12 h-12 rounded-full shadow-inner border border-gray-200" style={{ backgroundColor: formData.color }}></div>
                
-               {/* Native Input Color (Hidden tapi di-trigger label) */}
                <div className="flex-1 relative">
                   <input 
                     type="color" 
@@ -153,14 +138,12 @@ export default function CategoryModal({ isOpen, onClose, onSuccess, editData }) 
             </div>
           </div>
 
-          {/* Footer */}
           <div className="pt-2 flex gap-3">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold text-sm transition-all">Batal</button>
             <button type="submit" disabled={submitting} className="flex-1 px-4 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 font-semibold text-sm transition-all shadow-lg shadow-blue-200 active:scale-95 flex items-center justify-center gap-2">
               {submitting ? 'Menyimpan...' : <><FiSave size={18} /> Simpan</>}
             </button>
           </div>
-
         </form>
       </div>
     </div>,

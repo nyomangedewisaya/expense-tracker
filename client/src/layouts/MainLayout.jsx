@@ -1,15 +1,13 @@
 import Sidebar from '../components/Sidebar';
-import { useContext, useState } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { useState } from 'react';
 import { FiSearch, FiMenu } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 
 const MainLayout = ({ children }) => {
-  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Fungsi Sapaan Waktu Indonesia
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 11) return 'Selamat Pagi';
@@ -18,13 +16,10 @@ const MainLayout = ({ children }) => {
     return 'Selamat Malam';
   };
 
-  // Fungsi Search Sederhana (Mengarah ke halaman transaksi)
-  // FUNGSI SEARCH YANG LEBIH PINTAR (SMART NAVIGATION)
   const handleSearch = (e) => {
     if (e.key === 'Enter' && searchTerm.trim() !== "") {
-      const keyword = searchTerm.toLowerCase(); // Ubah ke huruf kecil biar gampang dicek
+      const keyword = searchTerm.toLowerCase();
 
-      // 1. LOGIKA PINTASAN MENU (SHORTCUT)
       if (keyword.includes('dompet') || keyword.includes('wallet') || keyword.includes('saldo')) {
           navigate('/wallets');
       } 
@@ -40,32 +35,38 @@ const MainLayout = ({ children }) => {
       else if (keyword.includes('setting') || keyword.includes('pengaturan') || keyword.includes('profil') || keyword.includes('password')) {
           navigate('/settings');
       }
-      
-      // 2. DEFAULT: JIKA BUKAN MENU, CARI DATA DI TRANSAKSI
       else {
           navigate(`/transactions?q=${encodeURIComponent(searchTerm)}`);
       }
       
-      // Reset input setelah enter
       setSearchTerm(''); 
+      setIsSidebarOpen(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex">
-      {/* Sidebar Component */}
-      <Sidebar />
+      
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
 
-      {/* Wrapper Konten Utama */}
+      {isSidebarOpen && (
+        <div 
+            className="fixed inset-0 z-20 bg-black/50 backdrop-blur-sm md:hidden transition-opacity"
+            onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       <div className="flex-1 flex flex-col md:ml-64 transition-all duration-300">
-        
-        {/* --- HEADER --- */}
         <header className="h-20 bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-100 px-6 md:px-8 flex items-center justify-between">
-          
-          {/* Kiri: Sapaan */}
           <div className="flex items-center gap-4">
-            {/* Tombol Menu Mobile (Hanya muncul di layar kecil) */}
-            <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+            
+            <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+            >
                 <FiMenu size={24} />
             </button>
             
@@ -77,7 +78,6 @@ const MainLayout = ({ children }) => {
             </div>
           </div>
 
-          {/* Kanan: Search Bar */}
           <div className="flex items-center">
             <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -85,19 +85,17 @@ const MainLayout = ({ children }) => {
                 </div>
                 <input 
                     type="text" 
-                    placeholder="Cari menu atau data..." 
+                    placeholder="Cari..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={handleSearch}
-                    className="bg-gray-100 text-gray-600 border border-transparent focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-500/10 rounded-xl py-2.5 pl-10 pr-4 text-sm w-40 md:w-64 transition-all outline-none" 
+                    className="bg-gray-100 text-gray-600 border border-transparent focus:bg-white focus:border-blue-200 focus:ring-4 focus:ring-blue-500/10 rounded-xl py-2.5 pl-10 pr-4 text-sm w-32 md:w-64 transition-all outline-none" 
                 />
             </div>
           </div>
         </header>
 
-        {/* --- KONTEN HALAMAN --- */}
         <main className="flex-1 p-6 md:p-8 overflow-y-auto overflow-x-hidden">
-          {/* Container Konten dengan Fade In Animation */}
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
             {children}
           </div>

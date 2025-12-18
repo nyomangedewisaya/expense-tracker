@@ -1,19 +1,16 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// GET BUDGETS (Dengan Progress Bar)
 const getBudgets = async (req, res) => {
   try {
     const userId = req.user.id;
     
-    // 1. Ambil semua budget aktif
     const budgets = await prisma.budget.findMany({
       where: { user_id: userId, deleted_at: null },
-      include: { category: true }, // Include data kategori (nama & warna)
+      include: { category: true }, 
       orderBy: { end_date: 'asc' }
     });
 
-    // 2. Hitung 'spent' (terpakai) untuk setiap budget
     const budgetsWithProgress = await Promise.all(budgets.map(async (budget) => {
         const expenseAgg = await prisma.transaction.aggregate({
             _sum: { amount: true },
@@ -22,8 +19,8 @@ const getBudgets = async (req, res) => {
                 category_id: budget.category_id,
                 deleted_at: null,
                 transaction_date: {
-                    gte: budget.start_date, // Dari tanggal mulai
-                    lte: budget.end_date    // Sampai tanggal selesai
+                    gte: budget.start_date, 
+                    lte: budget.end_date    
                 }
             }
         });
@@ -33,7 +30,7 @@ const getBudgets = async (req, res) => {
         
         return {
             ...budget,
-            amount: Number(budget.amount), // Pastikan number
+            amount: Number(budget.amount), 
             spent: spent,
             remaining: Number(budget.amount) - spent,
             percentage: percentage
@@ -46,16 +43,12 @@ const getBudgets = async (req, res) => {
   }
 };
 
-// CREATE
 const createBudget = async (req, res) => {
   const { category_id, amount, start_date, end_date } = req.body;
   try {
     if (!category_id || !amount || !start_date || !end_date) {
         return res.status(400).json({ message: "Data tidak lengkap" });
     }
-
-    // Cek apakah budget untuk kategori ini di tanggal yang sama sudah ada (Opsional, tapi bagus untuk validasi)
-    // Disini kita skip dulu agar simple, user boleh buat multiple budget
 
     const newBudget = await prisma.budget.create({
       data: {
@@ -72,7 +65,6 @@ const createBudget = async (req, res) => {
   }
 };
 
-// UPDATE
 const updateBudget = async (req, res) => {
     const { id } = req.params;
     const { amount, start_date, end_date } = req.body;
@@ -91,7 +83,6 @@ const updateBudget = async (req, res) => {
     }
 };
 
-// DELETE (Soft Delete)
 const deleteBudget = async (req, res) => {
     const { id } = req.params;
     try {

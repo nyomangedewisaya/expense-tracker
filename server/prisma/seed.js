@@ -1,192 +1,290 @@
-// server/prisma/seed.js
-
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
-// Helper untuk membuat tanggal mundur (H-0, H-1, dst)
-const daysAgo = (days) => {
-  const date = new Date();
-  date.setDate(date.getDate() - days);
-  return date;
-};
-
 async function main() {
-  console.log('🌱 Mulai Seeding Database...');
+  console.log('🌱 Starting seeding...');
 
-  // 1. BERSIHKAN DATA LAMA
-  // Urutan delete penting untuk menghindari foreign key constraint error
-  await prisma.budget.deleteMany();
+  // 1. Bersihkan data lama (Urutan penting karena Foreign Key)
   await prisma.transfer.deleteMany();
   await prisma.transaction.deleteMany();
+  await prisma.budget.deleteMany();
   await prisma.category.deleteMany();
   await prisma.wallet.deleteMany();
   await prisma.user.deleteMany();
 
-  console.log('🧹 Database lama dibersihkan.');
+  console.log('🧹 Old data cleaned.');
 
-  const hashedPassword = await bcrypt.hash('123456', 10);
+  // Password default untuk semua user: 'password123'
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // ==========================================
-  // USER 1: Budi (Karyawan)
-  // Skenario: Rutin, Gaji UMR, Tabungan
-  // ==========================================
-  const user1 = await prisma.user.create({
-    data: { name: 'Budi Santoso', email: 'budi@example.com', password: hashedPassword },
-  });
+  // --- DEFINISI DATA USER ---
 
-  const wBudiBCA = await prisma.wallet.create({ data: { user_id: user1.id, name: 'BCA Utama', type: 'bank', initial_balance: 5000000 } });
-  const wBudiCash = await prisma.wallet.create({ data: { user_id: user1.id, name: 'Dompet Saku', type: 'cash', initial_balance: 200000 } });
-
-  const cBudiGaji = await prisma.category.create({ data: { user_id: user1.id, name: 'Gaji', type: 'income', color: '#10B981' } }); // Hijau
-  const cBudiMakan = await prisma.category.create({ data: { user_id: user1.id, name: 'Makanan', type: 'expense', color: '#F59E0B' } }); // Kuning
-  const cBudiTransport = await prisma.category.create({ data: { user_id: user1.id, name: 'Transport', type: 'expense', color: '#6366F1' } }); // Indigo
-
-  // Transaksi Budi (Sample)
-  await prisma.transaction.createMany({
-    data: [
-      { user_id: user1.id, wallet_id: wBudiBCA.id, category_id: cBudiGaji.id, amount: 7500000, description: 'Gaji Bulanan', transaction_date: daysAgo(25) },
-      { user_id: user1.id, wallet_id: wBudiCash.id, category_id: cBudiMakan.id, amount: 25000, description: 'Nasi Rames', transaction_date: daysAgo(2) },
-    ]
-  });
-
-  console.log('✅ User 1 (Budi) Created');
-
-  // ==========================================
-  // USER 2: Siti (Mahasiswa)
-  // Skenario: Uang Saku, Skincare, Jajan
-  // ==========================================
-  const user2 = await prisma.user.create({
-    data: { name: 'Siti Aminah', email: 'siti@example.com', password: hashedPassword },
-  });
-
-  const wSitiGopay = await prisma.wallet.create({ data: { user_id: user2.id, name: 'GoPay', type: 'ewallet', initial_balance: 300000 } });
-  const wSitiCash = await prisma.wallet.create({ data: { user_id: user2.id, name: 'Dompet Pink', type: 'cash', initial_balance: 50000 } });
-
-  const cSitiSaku = await prisma.category.create({ data: { user_id: user2.id, name: 'Uang Saku', type: 'income', color: '#3B82F6' } }); // Biru
-  const cSitiSkincare = await prisma.category.create({ data: { user_id: user2.id, name: 'Skincare', type: 'expense', color: '#EC4899' } }); // Pink
-  const cSitiJajan = await prisma.category.create({ data: { user_id: user2.id, name: 'Jajan', type: 'expense', color: '#D946EF' } }); // Fuchsia
-
-  await prisma.budget.create({
-    data: { user_id: user2.id, category_id: cSitiSkincare.id, amount: 200000, start_date: daysAgo(30), end_date: daysAgo(0) }
-  });
-
-  console.log('✅ User 2 (Siti) Created');
-
-  // ==========================================
-  // USER 3: Yahya (Freelancer / Developer)
-  // Skenario: 10 Hari berturut-turut, Server, Kopi, Project
-  // ==========================================
-  const user3 = await prisma.user.create({
-    data: { name: 'Yahya Developer', email: 'yahya@example.com', password: hashedPassword },
-  });
-
-  // Wallet Yahya
-  const wYahyaJago = await prisma.wallet.create({ data: { user_id: user3.id, name: 'Bank Jago', type: 'bank', initial_balance: 8000000 } });
-  const wYahyaPaypal = await prisma.wallet.create({ data: { user_id: user3.id, name: 'PayPal', type: 'ewallet', initial_balance: 5000000 } });
-  const wYahyaCash = await prisma.wallet.create({ data: { user_id: user3.id, name: 'Cash', type: 'cash', initial_balance: 300000 } });
-
-  // Kategori Yahya
-  const cYahyaProject = await prisma.category.create({ data: { user_id: user3.id, name: 'Proyek Web', type: 'income', color: '#10B981' } }); // Emerald
-  const cYahyaServer = await prisma.category.create({ data: { user_id: user3.id, name: 'Server & Tools', type: 'expense', color: '#EF4444' } }); // Red
-  const cYahyaFnb = await prisma.category.create({ data: { user_id: user3.id, name: 'Food & Coffee', type: 'expense', color: '#F97316' } }); // Orange
-  const cYahyaInternet = await prisma.category.create({ data: { user_id: user3.id, name: 'Internet', type: 'expense', color: '#0EA5E9' } }); // Sky Blue
-  const cYahyaEdu = await prisma.category.create({ data: { user_id: user3.id, name: 'Course/Buku', type: 'expense', color: '#8B5CF6' } }); // Violet
-
-  // ARRAY TRANSAKSI 10 HARI TERAKHIR (Dihitung mundur dari Hari Ini)
-  const yahyaTransactions = [
-    // Hari ini (H-0)
+  const usersData = [
     {
-      wallet: wYahyaCash, category: cYahyaFnb, amount: 28000,
-      desc: 'Kopi Susu Gula Aren', date: daysAgo(0)
+      name: 'Budi Santoso',
+      email: 'budi.normal@example.com',
+      persona: 'NORMAL', // Gaji standar, pengeluaran wajar
+      wallets: [
+        { name: 'Bank BCA', type: 'bank', balance: 5000000 },
+        { name: 'GoPay', type: 'ewallet', balance: 200000 },
+        { name: 'Tunai', type: 'cash', balance: 150000 },
+      ],
     },
-    // Kemarin (H-1)
     {
-      wallet: wYahyaJago, category: cYahyaServer, amount: 155000,
-      desc: 'Perpanjang VPS DigitalOcean', date: daysAgo(1)
+      name: 'Kevin Sultan',
+      email: 'kevin.boros@example.com',
+      persona: 'BOROS', // Gaji besar, pengeluaran sangat besar (lifestyle)
+      wallets: [
+        { name: 'Credit Card', type: 'bank', balance: 50000000 },
+        { name: 'Bank Mandiri', type: 'bank', balance: 10000000 },
+        { name: 'OVO', type: 'ewallet', balance: 5000000 },
+      ],
     },
-    // H-2
     {
-      wallet: wYahyaPaypal, category: cYahyaProject, amount: 2500000,
-      desc: 'DP Project Landing Page', date: daysAgo(2)
+      name: 'Siti Aminah',
+      email: 'siti.hemat@example.com',
+      persona: 'HEMAT', // Gaji menengah, sangat irit, rajin menabung
+      wallets: [
+        { name: 'Bank Jago (Tabungan)', type: 'bank', balance: 25000000 },
+        { name: 'Dompet Pasar', type: 'cash', balance: 50000 },
+      ],
     },
-    // H-3
     {
-      wallet: wYahyaCash, category: cYahyaFnb, amount: 45000,
-      desc: 'Makan Siang Ayam Bakar', date: daysAgo(3)
+      name: 'Rian Creative',
+      email: 'rian.freelance@example.com',
+      persona: 'FREELANCE', // Penghasilan tidak tentu tanggalnya, dompet banyak
+      wallets: [
+        { name: 'Jenius', type: 'bank', balance: 3000000 },
+        { name: 'PayPal', type: 'ewallet', balance: 8000000 },
+        { name: 'Cash', type: 'cash', balance: 300000 },
+      ],
     },
-    // H-4
     {
-      wallet: wYahyaJago, category: cYahyaInternet, amount: 350000,
-      desc: 'Bayar Wifi IndiHome', date: daysAgo(4)
-    },
-    // H-5
-    {
-      wallet: wYahyaJago, category: cYahyaEdu, amount: 120000,
-      desc: 'Ebook Laravel Advanced', date: daysAgo(5)
-    },
-    // H-6
-    {
-      wallet: wYahyaCash, category: cYahyaFnb, amount: 15000,
-      desc: 'Air Mineral & Snack', date: daysAgo(6)
-    },
-    // H-7
-    {
-      wallet: wYahyaPaypal, category: cYahyaServer, amount: 200000,
-      desc: 'Langganan ChatGPT Plus', date: daysAgo(7)
-    },
-    // H-8
-    {
-      wallet: wYahyaJago, category: cYahyaFnb, amount: 150000,
-      desc: 'Traktir Tim (Makan malam)', date: daysAgo(8)
-    },
-    // H-9
-    {
-      wallet: wYahyaPaypal, category: cYahyaProject, amount: 1200000,
-      desc: 'Pelunasan Fix Bug Web', date: daysAgo(9)
+      name: 'Dinda Mahasiswa',
+      email: 'dinda.student@example.com',
+      persona: 'STUDENT', // Uang saku pas-pasan, transaksi receh
+      wallets: [
+        { name: 'ShopeePay', type: 'ewallet', balance: 50000 },
+        { name: 'Dompet Saku', type: 'cash', balance: 200000 },
+      ],
     },
   ];
 
-  // Insert Loop Transaksi Yahya
-  for (const trx of yahyaTransactions) {
-    await prisma.transaction.create({
+  // --- PROSES SEEDING PER USER ---
+
+  for (const userData of usersData) {
+    // 1. Buat User
+    const user = await prisma.user.create({
       data: {
-        user_id: user3.id,
-        wallet_id: trx.wallet.id,
-        category_id: trx.category.id,
-        amount: trx.amount,
-        description: trx.desc,
-        transaction_date: trx.date,
-      }
+        name: userData.name,
+        email: userData.email,
+        password: hashedPassword,
+      },
     });
+
+    console.log(`👤 Created user: ${user.name} (${userData.persona})`);
+
+    // 2. Buat Wallet
+    const createdWallets = [];
+    for (const w of userData.wallets) {
+      const wallet = await prisma.wallet.create({
+        data: {
+          user_id: user.id,
+          name: w.name,
+          type: w.type,
+          initial_balance: w.balance,
+        },
+      });
+      createdWallets.push(wallet);
+    }
+
+    // 3. Buat Kategori (Disesuaikan dengan Persona)
+    const categories = [];
+    let incomeCats = [];
+    let expenseCats = [];
+
+    if (userData.persona === 'NORMAL') {
+      incomeCats = [{ name: 'Gaji Bulanan', color: '#10B981' }];
+      expenseCats = [
+        { name: 'Makan & Minum', color: '#F59E0B' },
+        { name: 'Transportasi', color: '#3B82F6' },
+        { name: 'Tagihan Listrik', color: '#EF4444' },
+      ];
+    } else if (userData.persona === 'BOROS') {
+      incomeCats = [{ name: 'Hasil Bisnis', color: '#10B981' }];
+      expenseCats = [
+        { name: 'Shopping', color: '#EC4899' },
+        { name: 'Party & Hiburan', color: '#8B5CF6' },
+        { name: 'Fine Dining', color: '#F59E0B' },
+        { name: 'Travel', color: '#06B6D4' },
+      ];
+    } else if (userData.persona === 'HEMAT') {
+      incomeCats = [{ name: 'Gaji Kantor', color: '#10B981' }];
+      expenseCats = [
+        { name: 'Belanja Sayur', color: '#F59E0B' },
+        { name: 'Sedekah', color: '#3B82F6' },
+        { name: 'Investasi', color: '#6366F1' }, // Expense tapi positif
+      ];
+    } else if (userData.persona === 'FREELANCE') {
+      incomeCats = [{ name: 'Proyek Desain', color: '#10B981' }, { name: 'Royalti', color: '#34D399' }];
+      expenseCats = [
+        { name: 'Software Subs', color: '#6366F1' },
+        { name: 'Kopi & Cafe', color: '#F59E0B' },
+        { name: 'Gadget', color: '#3B82F6' },
+      ];
+    } else if (userData.persona === 'STUDENT') {
+      incomeCats = [{ name: 'Kiriman Ortu', color: '#10B981' }];
+      expenseCats = [
+        { name: 'Jajan Kampus', color: '#F59E0B' },
+        { name: 'Print Tugas', color: '#6B7280' },
+        { name: 'Pulsa', color: '#EF4444' },
+      ];
+    }
+
+    // Insert Categories
+    for (const c of incomeCats) {
+      const cat = await prisma.category.create({ data: { user_id: user.id, name: c.name, type: 'income', color: c.color } });
+      categories.push(cat);
+    }
+    for (const c of expenseCats) {
+      const cat = await prisma.category.create({ data: { user_id: user.id, name: c.name, type: 'expense', color: c.color } });
+      categories.push(cat);
+    }
+
+    // 4. Buat Transaksi & Budget (Skenario Khusus)
+    const today = new Date();
+    const mainWallet = createdWallets[0];
+
+    // --- SKENARIO NORMAL (Budi) ---
+    if (userData.persona === 'NORMAL') {
+      // Pemasukan
+      await createTrx(user.id, mainWallet.id, categories[0].id, 7000000, 'Gaji Bulan Ini', daysAgo(5));
+      
+      // Pengeluaran
+      const catMakan = categories.find(c => c.name === 'Makan & Minum');
+      const catTrans = categories.find(c => c.name === 'Transportasi');
+      
+      await createTrx(user.id, createdWallets[1].id, catMakan.id, 25000, 'Makan Siang', daysAgo(2));
+      await createTrx(user.id, createdWallets[1].id, catMakan.id, 30000, 'Makan Malam', daysAgo(1));
+      await createTrx(user.id, createdWallets[1].id, catTrans.id, 15000, 'Ojek Online', daysAgo(3));
+
+      // Budget: Makan 1.5jt
+      await prisma.budget.create({
+        data: {
+          user_id: user.id,
+          category_id: catMakan.id,
+          amount: 1500000,
+          start_date: firstDayOfMonth(),
+          end_date: lastDayOfMonth(),
+        }
+      });
+    }
+
+    // --- SKENARIO BOROS (Kevin) ---
+    if (userData.persona === 'BOROS') {
+      // Pemasukan Besar
+      await createTrx(user.id, mainWallet.id, categories[0].id, 50000000, 'Profit Q3', daysAgo(10));
+
+      // Pengeluaran Gila-gilaan
+      const catShop = categories.find(c => c.name === 'Shopping');
+      const catParty = categories.find(c => c.name === 'Party & Hiburan');
+
+      await createTrx(user.id, mainWallet.id, catShop.id, 5000000, 'Beli Sneakers Baru', daysAgo(5));
+      await createTrx(user.id, mainWallet.id, catShop.id, 2000000, 'Baju Branded', daysAgo(4));
+      await createTrx(user.id, createdWallets[2].id, catParty.id, 3000000, 'Traktir Teman Ultah', daysAgo(2));
+
+      // Budget: Shopping 3jt (Tapi realita habis 7jt -> Over budget)
+      await prisma.budget.create({
+        data: {
+          user_id: user.id,
+          category_id: catShop.id,
+          amount: 3000000,
+          start_date: firstDayOfMonth(),
+          end_date: lastDayOfMonth(),
+        }
+      });
+    }
+
+    // --- SKENARIO HEMAT (Siti) ---
+    if (userData.persona === 'HEMAT') {
+      // Pemasukan
+      await createTrx(user.id, mainWallet.id, categories[0].id, 8000000, 'Gaji Pokok', daysAgo(7));
+
+      // Pengeluaran Kecil
+      const catSayur = categories.find(c => c.name === 'Belanja Sayur');
+      const catInvest = categories.find(c => c.name === 'Investasi');
+
+      await createTrx(user.id, createdWallets[1].id, catSayur.id, 15000, 'Sayur Bayam', daysAgo(3));
+      await createTrx(user.id, createdWallets[1].id, catSayur.id, 20000, 'Ayam Potong', daysAgo(3));
+      
+      // Transfer ke Investasi besar
+      await createTrx(user.id, mainWallet.id, catInvest.id, 4000000, 'Beli Reksadana', daysAgo(5));
+
+      // Budget: Sayur 500rb
+      await prisma.budget.create({
+        data: {
+          user_id: user.id,
+          category_id: catSayur.id,
+          amount: 500000,
+          start_date: firstDayOfMonth(),
+          end_date: lastDayOfMonth(),
+        }
+      });
+    }
+
+    // --- SKENARIO TRANSFER (Untuk semua user, contoh Rian Freelance) ---
+    if (userData.persona === 'FREELANCE') {
+        const catProyek = categories.find(c => c.name === 'Proyek Desain');
+        await createTrx(user.id, createdWallets[1].id, catProyek.id, 5000000, 'Payment Client US', daysAgo(6)); // Masuk PayPal
+
+        // Transfer dari PayPal ke Jenius
+        await prisma.transfer.create({
+            data: {
+                user_id: user.id,
+                from_wallet_id: createdWallets[1].id, // PayPal
+                to_wallet_id: createdWallets[0].id,   // Jenius
+                amount: 2000000,
+                description: 'Withdrawal ke Bank Lokal',
+                transaction_date: new Date(),
+            }
+        });
+    }
   }
 
-  // [BARU] Transfer Yahya: Withdraw PayPal ke Jago (Dilakukan di H-2 setelah dapat DP)
-  await prisma.transfer.create({
+  console.log('✅ Seeding completed successfully!');
+}
+
+// --- HELPER FUNCTIONS ---
+
+function daysAgo(days) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date;
+}
+
+function firstDayOfMonth() {
+  const date = new Date();
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function lastDayOfMonth() {
+  const date = new Date();
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+async function createTrx(userId, walletId, catId, amount, desc, date) {
+  await prisma.transaction.create({
     data: {
-      user_id: user3.id,
-      from_wallet_id: wYahyaPaypal.id,
-      to_wallet_id: wYahyaJago.id,
-      amount: 1000000,
-      description: 'Withdraw sebagian Project',
-      transaction_date: daysAgo(2) // Sesuai tanggal dapat DP
+      user_id: userId,
+      wallet_id: walletId,
+      category_id: catId,
+      amount: amount,
+      description: desc,
+      transaction_date: date,
     }
   });
-
-  // [BARU] Budget Yahya: Membatasi pengeluaran Server bulanan
-  await prisma.budget.create({
-    data: {
-      user_id: user3.id,
-      category_id: cYahyaServer.id,
-      amount: 500000, // Budget 500rb
-      start_date: daysAgo(30), // Anggap awal bulan
-      end_date: daysAgo(-5)    // Anggap akhir bulan
-    }
-  });
-
-  console.log('✅ User 3 (Yahya) Created dengan data 10 hari terakhir.');
-  console.log('🎉 Seeding Selesai!');
 }
 
 main()

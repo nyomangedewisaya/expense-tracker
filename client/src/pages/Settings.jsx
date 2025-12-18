@@ -2,26 +2,21 @@ import { useEffect, useState } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import api from '../api';
 import AlertModal from '../components/AlertModal';
-import { FiUser, FiLock, FiSave, FiCheckCircle, FiSettings } from 'react-icons/fi';
+import { FiUser, FiLock, FiSave, FiCheckCircle } from 'react-icons/fi';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
-  
-  // Hapus state 'user' jika tidak dipakai di UI lain, fokus ke form saja
-  // Inisialisasi dengan string kosong agar tidak error "uncontrolled component"
   const [profileForm, setProfileForm] = useState({ name: '', email: '' });
   const [passwordForm, setPasswordForm] = useState({ old_password: '', new_password: '', confirm_password: '' });
   const [alertData, setAlertData] = useState({ isOpen: false, title: '', message: '' });
 
-  // 1. FETCH DATA (DENGAN DEBUGGING)
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await api.get('/user/profile');
-        console.log("Data User:", res.data); // Cek Console browser: apakah data masuk?
+        console.log("Data User:", res.data);
         
-        // Pastikan set state hanya jika data ada
         if (res.data) {
             setProfileForm({ 
                 name: res.data.name || '', 
@@ -30,29 +25,21 @@ export default function Settings() {
         }
       } catch (err) { 
         console.error("Gagal ambil profil:", err); 
-        // Jika token expired/error, opsional: redirect ke login
       }
     };
     fetchProfile();
   }, []);
 
-  // 2. HANDLE UPDATE (PERBAIKAN ERROR HANDLING)
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Kirim data ke backend
       const res = await api.put('/user/profile', {
         name: profileForm.name,
         email: profileForm.email
       });
       
       setAlertData({ isOpen: true, title: "Berhasil", message: res.data.message });
-      
-      // Opsional: Update localStorage jika menyimpan nama user disana
-      // const userLocal = JSON.parse(localStorage.getItem('user'));
-      // localStorage.setItem('user', JSON.stringify({ ...userLocal, name: profileForm.name }));
-      
     } catch (error) {
       console.error("Error Update:", error);
       setAlertData({ 
@@ -65,7 +52,6 @@ export default function Settings() {
     }
   };
 
-  // Handle Change Password
   const handleChangePassword = async (e) => {
     e.preventDefault();
     if (passwordForm.new_password !== passwordForm.confirm_password) {
@@ -89,7 +75,7 @@ export default function Settings() {
 
   return (
     <MainLayout>
-      <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             Pengaturan
@@ -100,7 +86,6 @@ export default function Settings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* SIDEBAR TABS (Kiri) */}
         <div className="lg:col-span-1">
             <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 space-y-2">
                 <button 
@@ -122,10 +107,8 @@ export default function Settings() {
             </div>
         </div>
 
-        {/* CONTENT AREA (Kanan) */}
         <div className="lg:col-span-2">
             
-            {/* TAB: PROFIL */}
             {activeTab === 'profile' && (
                 <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <h2 className="text-lg font-bold text-gray-800 mb-1">Edit Profil</h2>
@@ -166,7 +149,6 @@ export default function Settings() {
                 </div>
             )}
 
-            {/* TAB: SECURITY */}
             {activeTab === 'security' && (
                 <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <h2 className="text-lg font-bold text-gray-800 mb-1">Ganti Password</h2>

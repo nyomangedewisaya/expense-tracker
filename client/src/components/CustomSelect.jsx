@@ -9,12 +9,11 @@ export default function CustomSelect({
   placeholder, 
   disabled,
   className = "",
-  onClear // Fitur baru: reset filter spesifik
+  onClear 
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Close outside click
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -27,7 +26,6 @@ export default function CustomSelect({
 
   const selectedOption = options.find(opt => String(opt.value) === String(value));
 
-  // Handle Clear
   const handleClear = (e) => {
     e.stopPropagation();
     if (onClear) onClear();
@@ -60,7 +58,6 @@ export default function CustomSelect({
         </span>
 
         <div className="flex items-center gap-1">
-          {/* Tombol Clear muncul jika ada value dan prop onClear */}
           {value && onClear && !disabled && (
             <div 
               onClick={handleClear}
@@ -73,7 +70,6 @@ export default function CustomSelect({
         </div>
       </div>
 
-      {/* Dropdown Menu dengan Animasi */}
       <div className={`
         absolute z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden origin-top
         transition-all duration-200 ease-in-out

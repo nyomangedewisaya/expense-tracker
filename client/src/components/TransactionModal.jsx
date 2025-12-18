@@ -5,7 +5,6 @@ import api from '../api';
 import CustomSelect from './CustomSelect';
 
 export default function TransactionModal({ isOpen, onClose, onSuccess }) {
-  // State terpisah untuk Mounting (DOM) dan Animasi (CSS)
   const [isMounted, setIsMounted] = useState(false);
   const [animate, setAnimate] = useState(false);
 
@@ -22,16 +21,13 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }) {
   const [loadingData, setLoadingData] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Logic Animasi Smooth (Mount -> Wait -> Animate)
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
-      // Jeda 10ms agar browser merender state awal (opacity-0) dulu, baru transisi ke opacity-100
       setTimeout(() => setAnimate(true), 10); 
       fetchDropdowns();
     } else {
       setAnimate(false);
-      // Tunggu animasi selesai (300ms) baru hapus dari DOM
       setTimeout(() => setIsMounted(false), 300);
     }
   }, [isOpen]);
@@ -62,9 +58,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }) {
     try {
       await api.post('/transactions', formData);
       onSuccess();
-      onClose(); // Trigger animasi tutup
+      onClose(); 
       
-      // Reset form
       setFormData({
         wallet_id: '',
         category_id: '',
@@ -87,7 +82,6 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }) {
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       
-      {/* 1. Backdrop Gelap (Fade In/Out) */}
       <div 
         className={`
           absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-out
@@ -96,14 +90,12 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }) {
         onClick={onClose}
       ></div>
 
-      {/* 2. Modal Card (Scale In/Out + Translate) */}
       <div className={`
         bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 
         transform transition-all duration-300 ease-out
         ${animate ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-8'}
       `}>
         
-        {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div>
             <h3 className="font-bold text-xl text-gray-800">Transaksi Baru</h3>
@@ -117,10 +109,8 @@ export default function TransactionModal({ isOpen, onClose, onSuccess }) {
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
-          {/* Nominal */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nominal (Rp)</label>
             <div className="relative group">

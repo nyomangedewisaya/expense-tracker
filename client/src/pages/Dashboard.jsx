@@ -4,51 +4,37 @@ import api from '../api';
 import MainLayout from '../layouts/MainLayout';
 import Card from '../components/Card';
 import Button from '../components/Button';
-
-// Icons
 import { 
   FiTrendingUp, FiCreditCard, FiArrowRight, FiPlus, 
   FiActivity, FiPieChart, FiEye, FiEyeOff, FiTarget 
 } from 'react-icons/fi';
-
-// Charts
 import { 
   AreaChart, Area, XAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell 
 } from 'recharts';
 
-// --- SUB-COMPONENT: SHIMMER SKELETON (Efek Kilat Putih) ---
 const Skeleton = ({ className }) => (
-  <div className={`relative overflow-hidden bg-gray-200 rounded-xl ${className}`}>
-    <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
+  <div className={`relative overflow-hidden bg-gray-200 ${className}`}>
+    <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
   </div>
 );
 
 const Dashboard = () => {
   const navigate = useNavigate();
 
-  // --- STATE ---
   const [summary, setSummary] = useState({ total_balance: 0, income_this_month: 0, expense_this_month: 0 });
   const [recentTrx, setRecentTrx] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [budgets, setBudgets] = useState([]);
-  const [expenseStats, setExpenseStats] = useState([]); // Data Pie Chart
+  const [expenseStats, setExpenseStats] = useState([]); 
   const [chartData, setChartData] = useState([]);
-  
-  // Interactive State
   const [chartPeriod, setChartPeriod] = useState('7days');
   const [loading, setLoading] = useState(true);
   const [showBalance, setShowBalance] = useState(true);
 
-  // --- HELPERS ---
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num || 0);
   const formatDate = (date) => new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(new Date(date));
   const privacyMask = (amount) => showBalance ? formatRupiah(amount) : '••••••••';
-  
-  const getGreeting = () => {
-    const h = new Date().getHours();
-    return h < 11 ? 'Selamat Pagi' : h < 15 ? 'Selamat Siang' : h < 18 ? 'Selamat Sore' : 'Selamat Malam';
-  };
 
   const getProgressColor = (percent) => {
     if (percent < 50) return 'bg-emerald-500';
@@ -56,32 +42,28 @@ const Dashboard = () => {
     return 'bg-red-500';
   };
 
-  // --- FETCH DATA ---
   const fetchData = async () => {
     try {
-      setLoading(true);
+      setLoading(true); 
       
-      // Ambil 5 Endpoint sekaligus (Parallel Fetching)
-      // Perhatikan URL endpoint disesuaikan dengan Controller masing-masing
       const [resSummary, resTrx, resWallets, resBudgets, resExpenses] = await Promise.all([
-        api.get('/dashboard'),           // Summary Dashboard
-        api.get('/transactions'),        // Transaksi Terbaru
-        api.get('/wallets'),             // <-- PANGGIL CONTROLLER WALLET (getWallets)
-        api.get('/budgets'),             // <-- PANGGIL CONTROLLER BUDGET (getBudgets)
-        api.get('/dashboard/expenses')   // Pie Chart (Pastikan route ini ada di dashboardController)
+        api.get('/dashboard'),           
+        api.get('/transactions'),        
+        api.get('/wallets'),             
+        api.get('/budgets'),             
+        api.get('/dashboard/expenses')   
       ]);
 
       setSummary(resSummary.data);
       setRecentTrx(resTrx.data.slice(0, 5));
-      setWallets(resWallets.data); // Data sudah mengandung current_balance dari backend
-      setBudgets(resBudgets.data); // Data sudah mengandung percentage dari backend
+      setWallets(resWallets.data); 
+      setBudgets(resBudgets.data); 
       setExpenseStats(resExpenses.data);
 
     } catch (error) {
       console.error("Gagal ambil data:", error);
     } finally {
-      // Jeda 1.5 detik agar efek Shimmer kelihatan (UX)
-      setTimeout(() => setLoading(false), 1500);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
@@ -99,7 +81,6 @@ const Dashboard = () => {
 
   return (
     <MainLayout>
-        {/* Style Keyframe untuk Shimmer */}
         <style>{`
           @keyframes shimmer {
             100% { transform: translateX(100%); }
@@ -107,15 +88,35 @@ const Dashboard = () => {
         `}</style>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            
-            {/* === KOLOM KIRI (Konten Utama) - Lebar 2/3 === */}
             <div className="lg:col-span-2 space-y-8">
-                
-                {/* 1. HERO CARD */}
                 {loading ? (
-                    <Skeleton className="h-64 w-full rounded-3xl" />
+                    <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm h-[280px] flex flex-col justify-between">
+                        <div className="flex justify-between items-start">
+                             <div className="space-y-4">
+                                <Skeleton className="h-4 w-32 rounded" />
+                                <Skeleton className="h-12 w-64 rounded-lg" />
+                             </div>
+                             <Skeleton className="h-12 w-40 rounded-xl" />
+                        </div>
+                        <div className="flex gap-4 mt-6">
+                             <div className="w-40 h-16 bg-gray-50 rounded-xl p-3 flex items-center gap-3">
+                                 <Skeleton className="w-8 h-8 rounded-full" />
+                                 <div className="space-y-2">
+                                     <Skeleton className="h-2 w-16 rounded" />
+                                     <Skeleton className="h-4 w-20 rounded" />
+                                 </div>
+                             </div>
+                             <div className="w-40 h-16 bg-gray-50 rounded-xl p-3 flex items-center gap-3">
+                                 <Skeleton className="w-8 h-8 rounded-full" />
+                                 <div className="space-y-2">
+                                     <Skeleton className="h-2 w-16 rounded" />
+                                     <Skeleton className="h-4 w-20 rounded" />
+                                 </div>
+                             </div>
+                        </div>
+                    </div>
                 ) : (
-                    <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-blue-200 relative overflow-hidden transition-all duration-500 hover:shadow-2xl">
+                    <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-xl shadow-blue-200 relative overflow-hidden transition-all duration-500 hover:shadow-2xl h-[280px] flex flex-col justify-center">
                         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl animate-pulse"></div>
                         
                         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -154,11 +155,19 @@ const Dashboard = () => {
                     </div>
                 )}
 
-                {/* 2. AREA CHART (Full Width di Kiri) */}
                 {loading ? (
-                    <Skeleton className="h-80 w-full" />
+                    <Card className="!p-6 border-none shadow-lg h-[350px]">
+                        <div className="flex justify-between items-center mb-6">
+                            <Skeleton className="h-6 w-40 rounded" />
+                            <Skeleton className="h-8 w-24 rounded-lg" />
+                        </div>
+                        <div className="h-64 w-full bg-gray-50 rounded-xl relative overflow-hidden">
+                             <div className="absolute bottom-0 left-0 w-full h-32 bg-gray-200 opacity-50 rounded-b-xl clip-path-polygon"></div>
+                             <Skeleton className="w-full h-full opacity-20" />
+                        </div>
+                    </Card>
                 ) : (
-                    <Card className="!p-6 border-none shadow-lg">
+                    <Card className="!p-6 border-none shadow-lg h-[350px]">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                                 <FiActivity className="text-blue-500" /> Analisis Arus Kas
@@ -199,7 +208,6 @@ const Dashboard = () => {
                     </Card>
                 )}
 
-                {/* 3. TABEL TRANSAKSI */}
                 <div>
                     <div className="flex justify-between items-end mb-4">
                         <h3 className="text-lg font-bold text-gray-800">Riwayat Transaksi</h3>
@@ -210,17 +218,17 @@ const Dashboard = () => {
                     
                     <Card className="!p-0 overflow-hidden shadow-sm border border-gray-100">
                         {loading ? (
-                            <div className="p-6 space-y-6">
-                                {[1,2,3,4].map(i => (
-                                    <div key={i} className="flex justify-between items-center">
+                            <div className="divide-y divide-gray-50">
+                                {[1,2,3,4,5].map(i => (
+                                    <div key={i} className="flex justify-between items-center p-5">
                                         <div className="flex items-center gap-4">
                                             <Skeleton className="h-10 w-10 rounded-full" />
                                             <div className="space-y-2">
-                                                <Skeleton className="h-4 w-32" />
-                                                <Skeleton className="h-3 w-20" />
+                                                <Skeleton className="h-4 w-32 rounded" />
+                                                <Skeleton className="h-3 w-20 rounded" />
                                             </div>
                                         </div>
-                                        <Skeleton className="h-5 w-24" />
+                                        <Skeleton className="h-5 w-24 rounded" />
                                     </div>
                                 ))}
                             </div>
@@ -263,18 +271,34 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* === KOLOM KANAN (Widgets) - Lebar 1/3 === */}
             <div className="space-y-8">
-                {/* 1. WIDGET DOMPET */}
+                
                 {loading ? (
-                    <Skeleton className="h-64 w-full" />
+                    <Card className="!bg-gray-900 !border-none shadow-xl h-[400px] flex flex-col relative overflow-hidden">
+                        <div className="flex justify-between items-center mb-6">
+                            <Skeleton className="h-6 w-32 bg-gray-700 rounded" />
+                            <Skeleton className="h-5 w-16 bg-gray-700 rounded" />
+                        </div>
+                        <div className="space-y-4 flex-1">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="p-4 rounded-xl bg-gray-800/50 border border-gray-700/50">
+                                    <div className="flex justify-between mb-2">
+                                        <Skeleton className="h-4 w-24 bg-gray-700 rounded" />
+                                        <Skeleton className="h-4 w-12 bg-gray-700 rounded" />
+                                    </div>
+                                    <Skeleton className="h-6 w-32 bg-gray-600 rounded" />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mt-auto">
+                            <Skeleton className="h-12 w-full bg-gray-700 rounded-xl" />
+                        </div>
+                    </Card>
                 ) : (
-                    <Card className="!bg-gray-900 !text-white !border-none shadow-xl relative overflow-hidden ring-1 ring-white/10 flex flex-col">
-                        {/* Background Hiasan */}
+                    <Card className="!bg-gray-900 !text-white !border-none shadow-xl relative overflow-hidden ring-1 ring-white/10 flex flex-col h-[400px]">
                         <div className="absolute top-0 right-0 w-40 h-40 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10 pointer-events-none"></div>
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500 rounded-full blur-3xl opacity-20 -ml-10 -mb-10 pointer-events-none"></div>
                         
-                        {/* Header Widget */}
                         <div className="flex justify-between items-center mb-4 relative z-10 shrink-0">
                             <h3 className="font-bold text-lg flex items-center gap-2"><FiCreditCard /> Dompet Saya</h3>
                             <span className="text-xs text-gray-400 bg-white/10 px-2 py-1 rounded-lg border border-white/5">
@@ -282,16 +306,13 @@ const Dashboard = () => {
                             </span>
                         </div>
 
-                        {/* --- SCROLLABLE AREA (DAFTAR DOMPET) --- */}
-                        {/* max-h-[280px] membatasi tinggi agar muat sekitar 3 kartu, selebihnya scroll */}
-                        <div className="space-y-3 relative z-10 overflow-y-auto max-h-[280px] pr-1 custom-scrollbar">
+                        <div className="space-y-3 relative z-10 overflow-y-auto pr-1 custom-scrollbar flex-1">
                             {wallets.map((wallet) => {
                                 const isActive = !wallet.deleted_at;
-                                
                                 return (
                                     <div 
                                         key={wallet.id} 
-                                        onClick={() => navigate('/wallets')} // Bisa navigasi ke detail jika mau
+                                        onClick={() => navigate('/wallets')} 
                                         className={`p-4 rounded-xl backdrop-blur-md border transition-all cursor-pointer group
                                             ${isActive 
                                                 ? 'bg-white/5 border-white/10 hover:bg-white/10' 
@@ -301,69 +322,55 @@ const Dashboard = () => {
                                     >
                                         <div className="flex justify-between items-start mb-1">
                                             <div className="flex flex-col">
-                                                {!isActive && (
-                                                    <span className="text-[9px] font-bold text-red-300 uppercase tracking-wider mb-0.5">
-                                                        Nonaktif
-                                                    </span>
-                                                )}
-                                                <span className={`text-sm font-semibold transition-colors 
-                                                    ${isActive ? 'text-gray-200 group-hover:text-white' : 'text-gray-400 group-hover:text-gray-200'}
-                                                `}>
-                                                    {wallet.name}
-                                                </span>
+                                                {!isActive && <span className="text-[9px] font-bold text-red-300 uppercase tracking-wider mb-0.5">Nonaktif</span>}
+                                                <span className={`text-sm font-semibold transition-colors ${isActive ? 'text-gray-200 group-hover:text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>{wallet.name}</span>
                                             </div>
-
-                                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold border uppercase whitespace-nowrap
-                                                ${wallet.type === 'bank' ? 'bg-blue-500/20 text-blue-200 border-blue-500/30' : 
-                                                wallet.type === 'ewallet' ? 'bg-purple-500/20 text-purple-200 border-purple-500/30' : 
-                                                'bg-emerald-500/20 text-emerald-200 border-emerald-500/30' }`
-                                            }>
-                                                {wallet.type}
-                                            </span>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold border uppercase whitespace-nowrap ${wallet.type === 'bank' ? 'bg-blue-500/20 text-blue-200 border-blue-500/30' : wallet.type === 'ewallet' ? 'bg-purple-500/20 text-purple-200 border-purple-500/30' : 'bg-emerald-500/20 text-emerald-200 border-emerald-500/30' }`}>{wallet.type}</span>
                                         </div>
-                                        
-                                        <div className={`text-lg font-bold tracking-wide ${!isActive && 'text-gray-400 group-hover:text-white transition-colors'}`}>
-                                            {privacyMask(wallet.current_balance)}
-                                        </div>
+                                        <div className={`text-lg font-bold tracking-wide ${!isActive && 'text-gray-400 group-hover:text-white transition-colors'}`}>{privacyMask(wallet.current_balance)}</div>
                                     </div>
                                 );
                             })}
                         </div>
-
-                        {/* --- FIXED BUTTON (TETAP DI TEMPAT) --- */}
                         <div className="pt-4 mt-auto relative z-10">
-                            <button 
-                                onClick={() => navigate('/wallets')} 
-                                className="w-full py-3 rounded-xl border border-dashed border-gray-700 text-gray-400 text-sm hover:border-gray-500 hover:text-white transition-all flex justify-center items-center gap-2 hover:bg-white/5"
-                            >
+                            <button onClick={() => navigate('/wallets')} className="w-full py-3 rounded-xl border border-dashed border-gray-700 text-gray-400 text-sm hover:border-gray-500 hover:text-white transition-all flex justify-center items-center gap-2 hover:bg-white/5">
                                 <FiPlus /> Tambah Dompet
                             </button>
                         </div>
                     </Card>
                 )}
 
-                {/* 2. BUDGET WIDGET */}
                 {loading ? (
-                    <Skeleton className="h-56 w-full" />
+                    <Card className="border-none shadow-md">
+                        <div className="flex items-center gap-2 mb-6">
+                            <Skeleton className="h-6 w-6 rounded-full" />
+                            <Skeleton className="h-6 w-32 rounded" />
+                        </div>
+                        <div className="space-y-6">
+                            {[1, 2, 3].map(i => (
+                                <div key={i}>
+                                    <div className="flex justify-between mb-2">
+                                        <Skeleton className="h-4 w-20 rounded" />
+                                        <Skeleton className="h-4 w-10 rounded" />
+                                    </div>
+                                    <Skeleton className="h-2 w-full rounded-full" />
+                                    <div className="flex justify-between mt-2">
+                                        <Skeleton className="h-3 w-16 rounded" />
+                                        <Skeleton className="h-3 w-16 rounded" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
                 ) : (
                     <Card className="border-none shadow-md">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-6">
                             <FiTarget className="text-blue-500"/> Limit Anggaran
                         </h3>
-                        
                         {budgets.length === 0 ? (
-                            // PERBAIKAN DISINI:
-                            // Ganti 'text-center' dengan 'flex flex-col items-center justify-center'
                             <div className="flex flex-col items-center justify-center py-6 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                                 <p className="text-xs text-gray-400 mb-3">Belum ada anggaran diatur.</p>
-                                
-                                {/* Jangan lupa tambahkan navigasi agar tombolnya berfungsi */}
-                                <Button 
-                                    onClick={() => navigate('/budgets')} 
-                                    className="text-xs !py-1.5 !px-3 shadow-none"
-                                >
-                                    Buat Sekarang
-                                </Button>
+                                <Button onClick={() => navigate('/budgets')} className="text-xs !py-1.5 !px-3 shadow-none">Buat Sekarang</Button>
                             </div>
                         ) : (
                             <div className="space-y-6">
@@ -387,9 +394,27 @@ const Dashboard = () => {
                     </Card>
                 )}
 
-                {/* 3. [PINDAHAN] PIE CHART EXPENSE BREAKDOWN */}
                 {loading ? (
-                    <Skeleton className="h-64 w-full" />
+                    <Card className="border-none shadow-md">
+                        <div className="flex items-center gap-2 mb-2">
+                            <Skeleton className="h-6 w-32 rounded" />
+                        </div>
+                        <Skeleton className="h-3 w-40 rounded mb-4" />
+                        <div className="flex justify-center mb-6">
+                            <Skeleton className="h-40 w-40 rounded-full" />
+                        </div>
+                        <div className="space-y-3">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <Skeleton className="h-3 w-3 rounded-full" />
+                                        <Skeleton className="h-3 w-24 rounded" />
+                                    </div>
+                                    <Skeleton className="h-3 w-16 rounded" />
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
                 ) : (
                     <Card className="border-none shadow-md">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-2">
@@ -404,13 +429,7 @@ const Dashboard = () => {
                                 <div className="h-40 w-full relative mb-4">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <PieChart>
-                                            <Pie
-                                                data={expenseStats}
-                                                innerRadius={40}
-                                                outerRadius={60}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                            >
+                                            <Pie data={expenseStats} innerRadius={40} outerRadius={60} paddingAngle={5} dataKey="value">
                                                 {expenseStats.map((entry, index) => (
                                                     <Cell key={`cell-${index}`} fill={entry.color || '#94a3b8'} />
                                                 ))}
@@ -418,7 +437,6 @@ const Dashboard = () => {
                                             <Tooltip formatter={(val) => privacyMask(val)} />
                                         </PieChart>
                                     </ResponsiveContainer>
-                                    {/* Text Tengah Donut */}
                                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Total</span>
                                     </div>
@@ -438,7 +456,6 @@ const Dashboard = () => {
                         )}
                     </Card>
                 )}
-
             </div>
         </div>
     </MainLayout>

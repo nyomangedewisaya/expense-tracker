@@ -5,22 +5,19 @@ import ConfirmModal from '../components/ConfirmModal';
 import api from '../api';
 import { FiPlus, FiCreditCard, FiSmartphone, FiDollarSign, FiMoreVertical, FiEye, FiEyeOff, FiPower, FiRefreshCw } from 'react-icons/fi';
 
-// --- SKELETON LOADER ---
 const CardSkeleton = () => (
-  <div className="relative w-full h-48 rounded-3xl overflow-hidden bg-gray-200">
+  <div className="relative w-full h-52 rounded-3xl overflow-hidden bg-gray-200">
     <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
   </div>
 );
 
-// --- COMPONENT: WALLET MENU (DENGAN ANIMASI SMOOTH) ---
 const WalletMenu = ({ isActive, onToggle }) => {
-  const [isOpen, setIsOpen] = useState(false);       // Logic Buka/Tutup
-  const [isMounted, setIsMounted] = useState(false); // Logic DOM (Ada/Tiada)
-  const [animate, setAnimate] = useState(false);     // Logic CSS (Terlihat/Transparan)
+  const [isOpen, setIsOpen] = useState(false);       
+  const [isMounted, setIsMounted] = useState(false); 
+  const [animate, setAnimate] = useState(false);     
   
   const menuRef = useRef(null);
 
-  // 1. Handle Click Outside (Tutup jika klik di luar)
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -31,20 +28,18 @@ const WalletMenu = ({ isActive, onToggle }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [menuRef]);
 
-  // 2. Fungsi Buka (Mount dulu -> Delay -> Animate)
   const handleOpen = () => {
     setIsOpen(true);
     setIsMounted(true);
     setTimeout(() => setAnimate(true), 10);
   };
 
-  // 3. Fungsi Tutup (Animate balik -> Delay -> Unmount)
   const handleClose = () => {
     setAnimate(false);
     setTimeout(() => {
       setIsOpen(false);
       setIsMounted(false);
-    }, 200); // Sesuai durasi CSS (duration-200)
+    }, 200);
   };
 
   const toggleMenu = () => {
@@ -63,7 +58,6 @@ const WalletMenu = ({ isActive, onToggle }) => {
         <FiMoreVertical size={20} />
       </button>
 
-      {/* Dropdown Content */}
       {isMounted && (
         <div 
           className={`
@@ -75,12 +69,10 @@ const WalletMenu = ({ isActive, onToggle }) => {
               : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}
           `}
         >
-          {/* Header Kecil */}
           <div className="px-4 py-2 border-b border-gray-50 bg-gray-50/50">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Opsi Dompet</span>
           </div>
 
-          {/* Action Button */}
           <button 
             onClick={() => { handleClose(); onToggle(); }}
             className={`w-full text-left px-4 py-3 text-sm font-semibold flex items-center gap-3 transition-colors
@@ -110,18 +102,13 @@ const WalletMenu = ({ isActive, onToggle }) => {
 export default function Wallets() {
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // Modals State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [confirmData, setConfirmData] = useState({ isOpen: false, wallet: null });
-  
   const [showBalance, setShowBalance] = useState(true);
 
-  // Helper Formatter
   const formatRupiah = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
   const privacyMask = (amount) => showBalance ? formatRupiah(amount) : '••••••••';
 
-  // Helper Style
   const getWalletStyle = (type) => {
     switch(type) {
       case 'bank': return { bg: 'bg-gradient-to-br from-blue-600 to-indigo-700', icon: <FiCreditCard className="text-2xl" />, label: 'Bank Account' };
@@ -139,19 +126,17 @@ export default function Wallets() {
     } catch (error) {
       console.error("Gagal load wallet", error);
     } finally {
-      setTimeout(() => setLoading(false), 800);
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
   useEffect(() => { fetchWallets(); }, []);
 
-  // SORTING: Nonaktif selalu di bawah
   const sortedWallets = [...wallets].sort((a, b) => {
     if (a.deleted_at === b.deleted_at) return 0;
     return a.deleted_at ? 1 : -1;
   });
 
-  // Action: Confirm Modal
   const handleToggleClick = (wallet) => {
     const isActive = !wallet.deleted_at;
     setConfirmData({
@@ -165,11 +150,11 @@ export default function Wallets() {
     });
   };
 
-  // Action: Execute API
   const executeToggleStatus = async () => {
     if (!confirmData.wallet) return;
     try {
       await api.patch(`/wallets/${confirmData.wallet.id}/status`);
+      setConfirmData({ ...confirmData, isOpen: false });
       fetchWallets();
     } catch (error) {
       alert("Gagal update status");
@@ -182,16 +167,18 @@ export default function Wallets() {
     <MainLayout>
       <style>{`@keyframes shimmer { 100% { transform: translateX(100%); } }`}</style>
 
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Dompet Saya</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <p className="text-sm text-gray-500">Total aset aktif:</p>
-            <div className="flex items-center gap-2">
-               <span className="text-lg font-bold text-gray-800">{privacyMask(totalAssets)}</span>
-               <button onClick={() => setShowBalance(!showBalance)} className="text-gray-400 hover:text-blue-600 transition-colors">
-                 {showBalance ? <FiEyeOff size={16} /> : <FiEye size={16} />}
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800 flex items-center gap-2">
+            Dompet Saya
+          </h1>
+          
+          <div className="flex items-center gap-2 mt-2 bg-white px-3 py-1.5 rounded-lg border border-gray-100 w-fit shadow-sm">
+            <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Total Aset:</p>
+            <div className="flex items-center gap-2 border-l border-gray-200 pl-2">
+               <span className="text-base font-bold text-gray-800">{privacyMask(totalAssets)}</span>
+               <button onClick={() => setShowBalance(!showBalance)} className="text-gray-400 hover:text-blue-600 transition-colors p-1">
+                 {showBalance ? <FiEyeOff size={14} /> : <FiEye size={14} />}
                </button>
             </div>
           </div>
@@ -199,22 +186,22 @@ export default function Wallets() {
         
         <button 
           onClick={() => setIsCreateOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 shrink-0"
+          className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95 shrink-0"
         >
           <FiPlus size={20} /> Tambah Dompet
         </button>
       </div>
 
-      {/* GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
         {loading ? (
           [...Array(6)].map((_, i) => <CardSkeleton key={i} />)
         ) : sortedWallets.length === 0 ? (
-          <div className="col-span-full py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50/50">
+          <div className="col-span-full py-16 flex flex-col items-center justify-center text-center border-2 border-dashed border-gray-200 rounded-3xl bg-white">
             <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-3xl mb-4"><FiCreditCard /></div>
             <h3 className="text-lg font-bold text-gray-700">Belum ada dompet</h3>
-            <button onClick={() => setIsCreateOpen(true)} className="text-blue-600 font-semibold hover:underline mt-2">Buat Dompet Baru</button>
+            <p className="text-sm text-gray-400 mb-4 max-w-xs">Tambahkan akun bank atau e-wallet untuk mulai mencatat keuangan.</p>
+            <button onClick={() => setIsCreateOpen(true)} className="text-blue-600 font-semibold hover:underline">Buat Dompet Baru</button>
           </div>
         ) : (
           sortedWallets.map((wallet) => {
@@ -224,46 +211,46 @@ export default function Wallets() {
             return (
               <div 
                 key={wallet.id}
-                className={`relative h-52 rounded-3xl p-6 text-white shadow-xl shadow-gray-200 overflow-hidden group transition-all duration-300
+                className={`relative h-52 rounded-3xl p-6 text-white shadow-xl shadow-gray-200 overflow-hidden group transition-all duration-300 transform
                   ${style.bg}
-                  ${!isActive ? 'opacity-60 grayscale hover:grayscale-0 hover:opacity-100' : 'hover:shadow-2xl'}
+                  ${!isActive ? 'opacity-70 grayscale' : 'hover:-translate-y-1 hover:shadow-2xl'}
                 `}
               >
-                {/* Decoration */}
                 <div className="absolute top-0 right-0 -mr-8 -mt-8 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-500"></div>
                 <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-32 h-32 bg-black opacity-10 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-500"></div>
 
                 <div className="relative z-10 flex flex-col justify-between h-full">
                   
-                  {/* CARD HEADER */}
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-white/20 backdrop-blur-sm rounded-xl text-white/90">
+                      <div className="p-2.5 bg-white/20 backdrop-blur-sm rounded-xl text-white/90 shadow-sm border border-white/10">
                         {style.icon}
                       </div>
                       <div>
-                         {!isActive && <span className="text-[10px] bg-black/40 px-1.5 py-0.5 rounded text-white font-bold tracking-wider mb-0.5 block w-fit backdrop-blur-md">NONAKTIF</span>}
-                        <h3 className="font-bold text-lg leading-tight line-clamp-1">{wallet.name}</h3>
+                         {!isActive && (
+                            <span className="text-[9px] bg-black/50 px-1.5 py-0.5 rounded text-white font-bold tracking-wider mb-0.5 block w-fit backdrop-blur-md border border-white/10">
+                                NONAKTIF
+                            </span>
+                         )}
+                        <h3 className="font-bold text-lg leading-tight line-clamp-1" title={wallet.name}>{wallet.name}</h3>
                       </div>
                     </div>
                     
-                    {/* MENU TITIK TIGA DENGAN ANIMASI */}
                     <WalletMenu 
                       isActive={isActive} 
                       onToggle={() => handleToggleClick(wallet)} 
                     />
                   </div>
 
-                  {/* CARD FOOTER (Saldo & Tipe Sejajar) */}
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-xs text-white/70 font-medium mb-1 uppercase tracking-wide">Saldo Aktif</p>
-                      <h2 className="text-2xl font-bold tracking-tight truncate max-w-[180px]">
+                      <p className="text-xs text-white/80 font-medium mb-1 uppercase tracking-wide">Saldo Aktif</p>
+                      <h2 className="text-2xl md:text-3xl font-bold tracking-tight truncate max-w-[200px]">
                         {privacyMask(wallet.current_balance)}
                       </h2>
                     </div>
                     
-                    <div className="bg-white/20 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-lg">
+                    <div className="bg-white/20 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-lg shadow-sm">
                       <p className="text-[10px] font-bold text-white uppercase tracking-widest">
                         {wallet.type}
                       </p>

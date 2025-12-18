@@ -7,13 +7,12 @@ export default function FilterModal({
   onClose, 
   title = "Filter", 
   onReset, 
-  onApply, 
-  children // <--- INI KUNCINYA (Slot untuk konten dinamis)
+  onApply,
+  children 
 }) {
   const [isMounted, setIsMounted] = useState(false);
   const [animate, setAnimate] = useState(false);
 
-  // Logic Animasi Smooth (Mount -> Wait -> Animate)
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
@@ -27,9 +26,7 @@ export default function FilterModal({
   if (!isMounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4">
-      
-      {/* 1. Backdrop (Fade In/Out) */}
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div 
         className={`
           absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-in-out
@@ -38,15 +35,13 @@ export default function FilterModal({
         onClick={onClose}
       ></div>
 
-      {/* 2. Modal Container (Slide Up Mobile / Zoom Desktop) */}
       <div className={`
         bg-white w-full max-w-md relative z-10 flex flex-col max-h-[90vh]
-        rounded-t-3xl sm:rounded-3xl shadow-2xl
+        rounded-3xl shadow-2xl
         transform transition-all duration-300 ease-out
-        ${animate ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-full sm:translate-y-8 sm:scale-95 opacity-0'}
+        ${animate ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
       `}>
         
-        {/* HEADER */}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center flex-shrink-0">
           <h3 className="font-bold text-lg text-gray-800">{title}</h3>
           <button 
@@ -57,14 +52,12 @@ export default function FilterModal({
           </button>
         </div>
 
-        {/* BODY (Scrollable & Dinamis) */}
         <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
           <div className="space-y-6">
-            {children} {/* Konten form filter akan masuk di sini */}
+             {children} 
           </div>
         </div>
 
-        {/* FOOTER (Fixed Actions) */}
         <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex gap-3 rounded-b-3xl flex-shrink-0">
           <button 
             onClick={onReset}

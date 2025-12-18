@@ -17,11 +17,11 @@
 }
 
 .custom-scrollbar {
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE 10+ */
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
 }
 .custom-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/Webkit */
+  display: none; 
 }
 
 @keyframes fadeInUp {
@@ -36,10 +36,9 @@
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; /* Easing yang smooth */
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Aksen background halus */
 .bg-tech-pattern {
     background-image: radial-gradient(circle at 100% 0%, #e0f2fe 0%, transparent 25%), 
                       radial-gradient(circle at 0% 100%, #eff6ff 0%, transparent 25%);

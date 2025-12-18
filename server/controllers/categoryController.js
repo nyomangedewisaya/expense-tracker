@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// GET ACTIVE CATEGORIES
 const getCategories = async (req, res) => {
   try {
     const { type, search } = req.query;
@@ -20,7 +19,6 @@ const getCategories = async (req, res) => {
   }
 };
 
-// GET DELETED CATEGORIES (HISTORY)
 const getDeletedCategories = async (req, res) => {
   try {
     const categories = await prisma.category.findMany({
@@ -33,7 +31,6 @@ const getDeletedCategories = async (req, res) => {
   }
 };
 
-// CREATE
 const createCategory = async (req, res) => {
   const { name, type, color } = req.body;
   try {
@@ -47,14 +44,13 @@ const createCategory = async (req, res) => {
   }
 };
 
-// UPDATE (Type tidak boleh diubah)
 const updateCategory = async (req, res) => {
   const { id } = req.params;
   const { name, color } = req.body;
   try {
     const category = await prisma.category.update({
       where: { id: parseInt(id) },
-      data: { name, color } // Type tidak dimasukkan disini
+      data: { name, color }
     });
     res.json(category);
   } catch (error) {
@@ -62,11 +58,9 @@ const updateCategory = async (req, res) => {
   }
 };
 
-// SOFT DELETE
 const deleteCategory = async (req, res) => {
     const { id } = req.params;
     try {
-        // Cek apakah dipakai transaksi aktif
         const checkTrx = await prisma.transaction.findFirst({
             where: { category_id: parseInt(id), deleted_at: null }
         });
@@ -82,7 +76,6 @@ const deleteCategory = async (req, res) => {
     }
 };
 
-// RESTORE (Pulihkan dari sampah)
 const restoreCategory = async (req, res) => {
     const { id } = req.params;
     try {
@@ -96,13 +89,9 @@ const restoreCategory = async (req, res) => {
     }
 };
 
-// HARD DELETE (Hapus Selamanya)
 const permanentDeleteCategory = async (req, res) => {
     const { id } = req.params;
     try {
-        // Hapus paksa, transaksi terkait akan jadi orphan (atau set null jika relasi di DB on delete set null)
-        // Sebaiknya transaksi lama yang deleted_at nya ada juga ikut dihapus atau dibiarkan.
-        // Di sini kita asumsikan aman menghapus kategori yang sudah di trash.
         await prisma.category.delete({
             where: { id: parseInt(id) }
         });

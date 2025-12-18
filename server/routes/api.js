@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 
-// --- IMPORT CONTROLLERS ---
+// IMPORT CONTROLLERS
 const authController = require('../controllers/authController');
 const walletController = require('../controllers/walletController');
 const categoryController = require('../controllers/categoryController');
@@ -23,12 +23,12 @@ router.post('/wallets', authMiddleware, walletController.createWallet);
 
 // 3. CATEGORY
 router.get('/categories', authMiddleware, categoryController.getCategories);
-router.get('/categories/trash', authMiddleware, categoryController.getDeletedCategories); // History
+router.get('/categories/trash', authMiddleware, categoryController.getDeletedCategories); 
 router.post('/categories', authMiddleware, categoryController.createCategory);
-router.put('/categories/:id', authMiddleware, categoryController.updateCategory); // Update
-router.delete('/categories/:id', authMiddleware, categoryController.deleteCategory); // Soft Delete
-router.patch('/categories/:id/restore', authMiddleware, categoryController.restoreCategory); // Restore
-router.delete('/categories/:id/permanent', authMiddleware, categoryController.permanentDeleteCategory); // Hard Delete
+router.put('/categories/:id', authMiddleware, categoryController.updateCategory); 
+router.delete('/categories/:id', authMiddleware, categoryController.deleteCategory); 
+router.patch('/categories/:id/restore', authMiddleware, categoryController.restoreCategory); 
+router.delete('/categories/:id/permanent', authMiddleware, categoryController.permanentDeleteCategory); 
 
 // 4. TRANSACTION
 router.get('/transactions', authMiddleware, transactionController.getTransactions);
@@ -38,7 +38,6 @@ router.delete('/transactions/:id', authMiddleware, transactionController.deleteT
 // 5. DASHBOARD
 router.get('/dashboard', authMiddleware, dashboardController.getDashboardSummary);
 router.get('/dashboard/chart', authMiddleware, dashboardController.getDashboardChart);
-// PERBAIKAN: Tambahkan 's' agar sesuai frontend
 router.get('/dashboard/expenses', authMiddleware, dashboardController.getExpenseBreakdown); 
 
 // 6. TRANSFER
@@ -52,6 +51,7 @@ router.post('/budgets', authMiddleware, budgetController.createBudget);
 router.put('/budgets/:id', authMiddleware, budgetController.updateBudget); 
 router.delete('/budgets/:id', authMiddleware, budgetController.deleteBudget);
 
+// 8. USER
 router.get('/user/profile', authMiddleware, userController.getProfile);
 router.put('/user/profile', authMiddleware, userController.updateProfile);
 router.put('/user/password', authMiddleware, userController.changePassword);

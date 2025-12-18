@@ -1,22 +1,17 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiSave, FiRepeat } from 'react-icons/fi'; // Icon Repeat untuk Swap
+import { FiX, FiSave, FiRepeat } from 'react-icons/fi'; 
 import api from '../api';
 import CustomSelect from './CustomSelect';
-import AlertModal from './AlertModal'; // Kita pakai AlertModal untuk error saldo
+import AlertModal from './AlertModal'; 
 
 export default function TransferModal({ isOpen, onClose, onSuccess }) {
   const [isMounted, setIsMounted] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
-  // Data Options
   const [wallets, setWallets] = useState([]);
-  
-  // Error State
   const [alertData, setAlertData] = useState({ isOpen: false, message: '' });
 
-  // Form State
   const [formData, setFormData] = useState({
     from_wallet_id: '',
     to_wallet_id: '',
@@ -25,17 +20,15 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
     description: ''
   });
 
-  // 1. Load Data Dompet (Hanya yang Aktif)
   useEffect(() => {
     const loadWallets = async () => {
         try {
             const res = await api.get('/wallets');
-            // Filter: Hanya dompet aktif (!deleted_at)
             const activeWallets = res.data
                 .filter(w => !w.deleted_at)
                 .map(w => ({
                     value: w.id, 
-                    label: `${w.name} (Rp ${new Intl.NumberFormat('id-ID').format(w.current_balance)})`, // Tampilkan saldo di opsi biar user tau
+                    label: `${w.name} (Rp ${new Intl.NumberFormat('id-ID').format(w.current_balance)})`, 
                     original_balance: w.current_balance
                 }));
             setWallets(activeWallets);
@@ -44,12 +37,10 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
     if (isOpen) loadWallets();
   }, [isOpen]);
 
-  // 2. Animasi Modal
   useEffect(() => {
     if (isOpen) {
       setIsMounted(true);
       setTimeout(() => setAnimate(true), 10);
-      // Reset form saat dibuka
       setFormData({ from_wallet_id: '', to_wallet_id: '', amount: '', description: '', transaction_date: new Date().toISOString().split('T')[0] });
     } else {
       setAnimate(false);
@@ -57,7 +48,6 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
     }
   }, [isOpen]);
 
-  // 3. Logic SWAP (Tukar Posisi Dompet)
   const handleSwap = () => {
     setFormData(prev => ({
         ...prev,
@@ -66,11 +56,9 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
     }));
   };
 
-  // 4. Submit Data
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validasi Frontend Sederhana
     if (!formData.from_wallet_id || !formData.to_wallet_id || !formData.amount) {
         setAlertData({ isOpen: true, message: "Mohon lengkapi data transfer." });
         return;
@@ -83,10 +71,9 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
     setSubmitting(true);
     try {
       await api.post('/transfers', formData);
-      onSuccess(); // Refresh data di halaman induk
-      onClose();   // Tutup modal
+      onSuccess(); 
+      onClose();   
     } catch (error) {
-      // Tampilkan Error dari Backend (Misal: Saldo tidak cukup)
       setAlertData({ 
           isOpen: true, 
           message: error.response?.data?.message || "Gagal melakukan transfer." 
@@ -100,13 +87,10 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-out ${animate ? 'opacity-100' : 'opacity-0'}`} onClick={onClose}></div>
 
-      {/* Modal Card */}
       <div className={`bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 transform transition-all duration-300 ease-out ${animate ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-8'}`}>
         
-        {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div>
             <h3 className="font-bold text-xl text-gray-800">Transfer Saldo</h3>
@@ -119,10 +103,8 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           
-          {/* AREA TRANSFER (FROM <-> TO) */}
           <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 relative">
              
-             {/* Tombol Swap di Tengah */}
              <button 
                 type="button"
                 onClick={handleSwap}
@@ -133,7 +115,6 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
              </button>
 
              <div className="space-y-5">
-                {/* FROM */}
                 <CustomSelect 
                     label="Dari Dompet"
                     placeholder="Pilih Sumber Dana"
@@ -142,7 +123,6 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
                     onChange={(val) => setFormData({...formData, from_wallet_id: val})}
                 />
 
-                {/* TO */}
                 <CustomSelect 
                     label="Ke Dompet"
                     placeholder="Pilih Penerima Dana"
@@ -153,7 +133,6 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
              </div>
           </div>
 
-          {/* Nominal */}
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nominal Transfer</label>
             <div className="relative group">
@@ -169,7 +148,6 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
             </div>
           </div>
 
-          {/* Tanggal & Deskripsi */}
           <div className="grid grid-cols-2 gap-4">
              <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tanggal</label>
@@ -201,7 +179,6 @@ export default function TransferModal({ isOpen, onClose, onSuccess }) {
           </div>
         </form>
 
-        {/* Modal Alert (Untuk Error Saldo) */}
         <AlertModal 
             isOpen={alertData.isOpen}
             onClose={() => setAlertData({...alertData, isOpen: false})}

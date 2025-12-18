@@ -1,11 +1,8 @@
 import { useState } from 'react';
-import { FiEye, FiEyeOff } from 'react-icons/fi'; // Pastikan sudah install react-icons
+import { FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Input = ({ label, type = "text", placeholder, value, onChange, error }) => {
-  // State untuk toggle password (hanya aktif jika type="password")
   const [showPassword, setShowPassword] = useState(false);
-  
-  // Cek apakah ini input password?
   const isPasswordField = type === 'password';
 
   return (
@@ -18,7 +15,6 @@ const Input = ({ label, type = "text", placeholder, value, onChange, error }) =>
       
       <div className="relative">
         <input
-          // Jika ini field password, cek state showPassword. Jika bukan, pakai type aslinya.
           type={isPasswordField ? (showPassword ? 'text' : 'password') : type}
           
           className={`w-full pl-4 ${isPasswordField ? 'pr-12' : 'pr-4'} py-3 rounded-lg border text-gray-700 bg-white placeholder-gray-400 shadow-sm transition-all duration-300 ease-in-out
@@ -31,18 +27,17 @@ const Input = ({ label, type = "text", placeholder, value, onChange, error }) =>
           onChange={onChange}
         />
 
-        {/* Tombol Mata (Hanya muncul di field password) */}
         {isPasswordField && (
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors cursor-pointer focus:outline-none"
-            tabIndex="-1" // Agar tidak bisa di-tab (fokus tetap di input)
+            tabIndex="-1" 
           >
             {showPassword ? (
-              <FiEyeOff size={20} /> // Icon Mata Silang (Hide)
+              <FiEyeOff size={20} /> 
             ) : (
-              <FiEye size={20} />    // Icon Mata Biasa (Show)
+              <FiEye size={20} />    
             )}
           </button>
         )}

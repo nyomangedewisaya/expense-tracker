@@ -2,16 +2,14 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiRefreshCw, FiTrash2, FiAlertOctagon } from 'react-icons/fi';
 import api from '../api';
-import ConfirmModal from './ConfirmModal'; // Import Modal Konfirmasi
-import AlertModal from './AlertModal';     // Import Modal Alert
+import ConfirmModal from './ConfirmModal'; 
+import AlertModal from './AlertModal';     
 
 export default function TrashCategoryModal({ isOpen, onClose, onUpdate }) {
   const [isMounted, setIsMounted] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [deletedCategories, setDeletedCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // State untuk Modal Konfirmasi & Alert
   const [confirmData, setConfirmData] = useState({ isOpen: false, id: null });
   const [alertData, setAlertData] = useState({ isOpen: false, title: '', message: '' });
 
@@ -42,9 +40,8 @@ export default function TrashCategoryModal({ isOpen, onClose, onUpdate }) {
     try {
       await api.patch(`/categories/${id}/restore`);
       fetchDeleted();
-      onUpdate(); // Refresh halaman utama
+      onUpdate();
     } catch (error) {
-      // Tampilkan Alert Modal jika gagal restore
       setAlertData({
         isOpen: true,
         title: "Gagal Memulihkan",
@@ -53,7 +50,6 @@ export default function TrashCategoryModal({ isOpen, onClose, onUpdate }) {
     }
   };
 
-  // 1. Trigger saat tombol tong sampah diklik
   const handleHardDeleteClick = (id) => {
     setConfirmData({
       isOpen: true,
@@ -61,17 +57,14 @@ export default function TrashCategoryModal({ isOpen, onClose, onUpdate }) {
     });
   };
 
-  // 2. Eksekusi Hapus Permanen setelah konfirmasi "Ya"
   const executeHardDelete = async () => {
     try {
       await api.delete(`/categories/${confirmData.id}/permanent`);
       
-      // Sukses -> Refresh list
       fetchDeleted();
-      setConfirmData({ ...confirmData, isOpen: false }); // Tutup konfirmasi
+      setConfirmData({ ...confirmData, isOpen: false });
 
     } catch (error) {
-      // Gagal -> Tutup konfirmasi -> Buka Alert Warning
       setConfirmData({ ...confirmData, isOpen: false });
       
       setAlertData({
@@ -86,16 +79,13 @@ export default function TrashCategoryModal({ isOpen, onClose, onUpdate }) {
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      {/* Backdrop Modal Utama */}
       <div 
         className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-out ${animate ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       ></div>
 
-      {/* Container Modal Utama */}
       <div className={`bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative z-10 transform transition-all duration-300 ease-out flex flex-col max-h-[85vh] ${animate ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-8'}`}>
         
-        {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
           <div className="flex items-center gap-2">
              <div className="p-2 bg-red-100 rounded-full text-red-500"><FiTrash2 /></div>
@@ -106,7 +96,6 @@ export default function TrashCategoryModal({ isOpen, onClose, onUpdate }) {
           </button>
         </div>
 
-        {/* List Content */}
         <div className="p-2 overflow-y-auto custom-scrollbar flex-1">
           {loading ? (
             <div className="p-8 text-center text-gray-400 text-sm animate-pulse">Memuat data sampah...</div>
@@ -150,7 +139,6 @@ export default function TrashCategoryModal({ isOpen, onClose, onUpdate }) {
         </div>
       </div>
 
-      {/* --- MODAL KONFIRMASI (HARD DELETE) --- */}
       <ConfirmModal
         isOpen={confirmData.isOpen}
         onClose={() => setConfirmData({ ...confirmData, isOpen: false })}
@@ -160,7 +148,6 @@ export default function TrashCategoryModal({ isOpen, onClose, onUpdate }) {
         type="danger"
       />
 
-      {/* --- ALERT MODAL (ERROR HANDLING) --- */}
       <AlertModal 
         isOpen={alertData.isOpen}
         onClose={() => setAlertData({ ...alertData, isOpen: false })}

@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// GET: List Transfer (Support Filter)
 const getTransfers = async (req, res) => {
   const userId = req.user.id;
   const { from_wallet_id, to_wallet_id, start_date, end_date } = req.query;
@@ -25,8 +24,8 @@ const getTransfers = async (req, res) => {
     const transfers = await prisma.transfer.findMany({
       where: whereClause,
       include: {
-        from_wallet: true, // Sertakan info dompet pengirim
-        to_wallet: true    // Sertakan info dompet penerima
+        from_wallet: true, 
+        to_wallet: true    
       },
       orderBy: { transaction_date: 'desc' }
     });
@@ -37,14 +36,12 @@ const getTransfers = async (req, res) => {
   }
 };
 
-// POST: Buat Transfer Baru (Dengan Validasi Saldo Ketat)
 const createTransfer = async (req, res) => {
   const userId = req.user.id;
   const { from_wallet_id, to_wallet_id, amount, description, transaction_date } = req.body;
   const nominal = parseInt(amount);
 
   try {
-    // 1. Validasi Input Dasar
     if (!from_wallet_id || !to_wallet_id || !amount) {
         return res.status(400).json({ message: "Data tidak lengkap" });
     }
@@ -53,17 +50,12 @@ const createTransfer = async (req, res) => {
         return res.status(400).json({ message: "Tidak bisa transfer ke dompet yang sama" });
     }
 
-    // 2. Cek Keberadaan Dompet Pengirim
     const sourceWallet = await prisma.wallet.findFirst({
         where: { id: parseInt(from_wallet_id), user_id: userId }
     });
 
     if (!sourceWallet) return res.status(404).json({ message: "Dompet pengirim tidak ditemukan" });
 
-    // 3. HITUNG SALDO AKTUAL DOMPET PENGIRIM
-    // Rumus: Modal + Income - Expense + TransferMasuk - TransferKeluar
-    
-    // A. Transaksi
     const incomeAgg = await prisma.transaction.aggregate({
         _sum: { amount: true },
         where: { wallet_id: sourceWallet.id, deleted_at: null, category: { type: 'income' } }
@@ -72,8 +64,6 @@ const createTransfer = async (req, res) => {
         _sum: { amount: true },
         where: { wallet_id: sourceWallet.id, deleted_at: null, category: { type: 'expense' } }
     });
-
-    // B. Transfer
     const transferInAgg = await prisma.transfer.aggregate({
         _sum: { amount: true },
         where: { to_wallet_id: sourceWallet.id, deleted_at: null }
@@ -89,14 +79,12 @@ const createTransfer = async (req, res) => {
         + (transferInAgg._sum.amount || 0) 
         - (transferOutAgg._sum.amount || 0);
 
-    // 4. Cek Kecukupan Saldo
     if (nominal > currentBalance) {
         return res.status(400).json({ 
             message: `Gagal! Saldo dompet asal hanya Rp ${currentBalance.toLocaleString('id-ID')}, tidak cukup untuk transfer Rp ${nominal.toLocaleString('id-ID')}` 
         });
     }
 
-    // 5. Eksekusi Transfer jika aman
     const newTransfer = await prisma.transfer.create({
       data: {
         user_id: userId,
@@ -115,7 +103,6 @@ const createTransfer = async (req, res) => {
   }
 };
 
-// DELETE: Soft Delete
 const deleteTransfer = async (req, res) => {
     const { id } = req.params;
     try {

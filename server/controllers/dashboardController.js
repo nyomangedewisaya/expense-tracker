@@ -1,20 +1,16 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// HELPER: Konversi Tanggal ke String 'YYYY-MM-DD' sesuai Zona Waktu Jakarta
-// Ini kuncinya agar tidak geser hari (UTC vs WIB)
 const getWIBDateString = (date) => {
-    return new Intl.DateTimeFormat('en-CA', { // en-CA formatnya YYYY-MM-DD
+    return new Intl.DateTimeFormat('en-CA', { 
         timeZone: 'Asia/Jakarta',
     }).format(date);
 };
 
-// 1. SUMMARY DASHBOARD
 const getDashboardSummary = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // A. Hitung Saldo Real (Sama seperti sebelumnya)
     const wallets = await prisma.wallet.findMany({ where: { user_id: userId, deleted_at: null } });
     let totalBalance = 0;
 
@@ -33,7 +29,6 @@ const getDashboardSummary = async (req, res) => {
         totalBalance += balance;
     }
 
-    // B. Hitung Bulan Ini
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -59,44 +54,35 @@ const getDashboardSummary = async (req, res) => {
   }
 };
 
-// 2. CHART DATA (YANG KITA PERBAIKI)
 const getDashboardChart = async (req, res) => {
     const userId = req.user.id;
-    const { period } = req.query; // '7days' atau 'month'
+    const { period } = req.query;
 
     try {
         const now = new Date();
         let startDate = new Date();
         let endDate = new Date();
 
-        // Tentukan Range
         if (period === 'month') {
             startDate = new Date(now.getFullYear(), now.getMonth(), 1);
             endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
         } else {
-            // 7 Hari ke belakang (termasuk hari ini)
             startDate = new Date();
             startDate.setDate(now.getDate() - 6);
             endDate = new Date();
         }
 
-        // --- STEP 1: Buat Kerangka Tanggal (Map) ---
-        // Kita loop tanggal satu per satu untuk memastikan sumbu X Chart lengkap
         const chartMap = new Map();
         let loopDate = new Date(startDate);
         
-        // Loop sampai endDate
         while (loopDate <= endDate) {
-            // Gunakan helper getWIBDateString agar tanggalnya KONSISTEN YYYY-MM-DD (WIB)
-            // JANGAN pakai toISOString() karena itu UTC (bisa mundur sehari)
             const dateKey = getWIBDateString(loopDate); 
             
-            // Format Label untuk UI (Contoh: "Sen 14")
             let label = "";
             if (period === 'month') {
-                label = new Intl.DateTimeFormat('id-ID', { day: 'numeric' }).format(loopDate); // Tgl saja
+                label = new Intl.DateTimeFormat('id-ID', { day: 'numeric' }).format(loopDate); 
             } else {
-                label = new Intl.DateTimeFormat('id-ID', { weekday: 'short', day: 'numeric' }).format(loopDate); // Hari + Tgl
+                label = new Intl.DateTimeFormat('id-ID', { weekday: 'short', day: 'numeric' }).format(loopDate); 
             }
 
             chartMap.set(dateKey, {
@@ -106,12 +92,9 @@ const getDashboardChart = async (req, res) => {
                 expense: 0
             });
 
-            // Tambah 1 hari
             loopDate.setDate(loopDate.getDate() + 1);
         }
 
-        // --- STEP 2: Ambil Data dari Database ---
-        // Kita set jam query agar mencakup 00:00:00 s/d 23:59:59 di range tersebut
         const queryStart = new Date(startDate); queryStart.setHours(0,0,0,0);
         const queryEnd = new Date(endDate); queryEnd.setHours(23,59,59,999);
 
@@ -127,12 +110,9 @@ const getDashboardChart = async (req, res) => {
             include: { category: true }
         });
 
-        // --- STEP 3: Masukkan Data ke Kerangka ---
         transactions.forEach(trx => {
-            // Konversi tanggal transaksi DB ke String WIB juga
             const trxDateKey = getWIBDateString(new Date(trx.transaction_date));
 
-            // Jika tanggalnya ada di range chart kita, tambahkan angkanya
             if (chartMap.has(trxDateKey)) {
                 const dayData = chartMap.get(trxDateKey);
                 if (trx.category.type === 'income') {
@@ -143,7 +123,6 @@ const getDashboardChart = async (req, res) => {
             }
         });
 
-        // Ubah Map jadi Array untuk respon JSON
         const result = Array.from(chartMap.values());
         res.json(result);
 
@@ -160,7 +139,6 @@ const getExpenseBreakdown = async (req, res) => {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-        // Ambil transaksi pengeluaran bulan ini
         const transactions = await prisma.transaction.findMany({
             where: {
                 user_id: userId,
@@ -171,10 +149,9 @@ const getExpenseBreakdown = async (req, res) => {
             include: { category: true }
         });
 
-        // Grouping data berdasarkan Nama Kategori
         const breakdown = transactions.reduce((acc, curr) => {
             const catName = curr.category.name;
-            const catColor = curr.category.color || '#94a3b8'; // Default gray jika null
+            const catColor = curr.category.color || '#94a3b8'; 
             
             if (!acc[catName]) {
                 acc[catName] = { name: catName, value: 0, color: catColor };
@@ -183,7 +160,6 @@ const getExpenseBreakdown = async (req, res) => {
             return acc;
         }, {});
 
-        // Ubah Object ke Array dan urutkan dari yang terbesar
         const result = Object.values(breakdown).sort((a, b) => b.value - a.value);
 
         res.json(result);

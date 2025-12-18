@@ -33,8 +33,6 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 bg-tech-pattern p-4 font-sans">
       
       <Card className="w-full max-w-md animate-fade-in-up border-t-4 border-t-blue-600 shadow-2xl shadow-blue-100/50">
-        
-        {/* Header */}
         <div className="text-center mb-8 pt-2">
           <div className="flex justify-center mb-4">
              <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
@@ -58,7 +56,7 @@ const Login = () => {
               <Input 
                 label="Email"
                 type="email" 
-                placeholder="name@company.com" // Placeholder normal
+                placeholder="name@company.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -67,7 +65,7 @@ const Login = () => {
                 <Input 
                     label="Password"
                     type="password" 
-                    placeholder="Enter your password" // Placeholder normal
+                    placeholder="Enter your password" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
